@@ -1,0 +1,399 @@
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Custom titlebar for the Electron window */
+  .titlebar {
+    height: 32px;
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 13px;
+    -webkit-app-region: drag; /* Make the titlebar draggable */
+    user-select: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999; /* Ensure titlebar is always on top */
+  }
+  
+  .titlebar-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+  
+  .titlebar-controls {
+    display: flex;
+    -webkit-app-region: no-drag; /* Make the buttons clickable */
+  }
+  
+  .titlebar-button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color var(--transition-short) var(--ease-out);
+  }
+  
+  .titlebar-button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  
+  #close-button:hover {
+    background-color: var(--danger);
+    color: white;
+  }
+  
+  /* Main app layout */
+  .app-layout {
+    display: flex;
+    height: calc(100vh - 32px); /* Subtract titlebar height */
+    overflow: hidden;
+    margin-top: 32px; /* Add margin to account for fixed titlebar */
+  }
+  
+  /* General buttons and interactive elements */
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    color: inherit;
+  }
+  
+  button:focus, 
+  input:focus, 
+  textarea:focus {
+    outline: none;
+  }
+  
+  button.primary {
+    background-color: var(--accent);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-short) var (--ease-out);
+  }
+  
+  button.primary:hover {
+    background-color: var(--accent-hover);
+  }
+  
+  button.secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-short) var(--ease-out);
+  }
+  
+  button.secondary:hover {
+    background-color: var(--bg-hover);
+  }
+  
+  button.danger {
+    background-color: var(--danger);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-short) var(--ease-out);
+  }
+  
+  button.danger:hover {
+    background-color: var(--danger-hover);
+  }
+  
+  /* Input styles */
+  input, textarea {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-secondary);
+  }
+  
+  /* Modals */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: var(--z-index-modal);
+  }
+  
+  .modal.active {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+  
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* width: 100%;
+    height: 100%; */
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .modal-container {
+    position: relative;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    width: 80%;
+    max-width: 500px;
+    max-height: 80%;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .modal-container.small {
+    max-width: 350px;
+  }
+  
+  .modal-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modal-header h3 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+  }
+  
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    transition: color var(--transition-short) var(--ease-out);
+  }
+  
+  .modal-close:hover {
+    color: var(--text-primary);
+  }
+  
+  .modal-content {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .modal-section {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .modal-actions {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+  }
+  
+  .input-group {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .input-group label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .input-group input {
+    width: 100%;
+  }
+  
+  /* Toast notifications */
+  .toast-container {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    z-index: var(--z-index-toast);
+  }
+  
+  .toast {
+    padding: var(--spacing-md);
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 200px;
+    max-width: 300px;
+    animation: toast-in var(--transition-medium) var(--ease-out) forwards;
+  }
+  
+  .toast.success {
+    border-left: 4px solid var(--status-online);
+  }
+  
+  .toast.error {
+    border-left: 4px solid var(--danger);
+  }
+  
+  .toast.warning {
+    border-left: 4px solid var(--status-away);
+  }
+  
+  .toast.info {
+    border-left: 4px solid var(--accent);
+  }
+  
+  .toast-icon {
+    font-size: var(--font-size-xl);
+  }
+  
+  .toast-content {
+    flex: 1;
+  }
+  
+  .toast-title {
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+  }
+  
+  .toast-message {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+  }
+  
+  .toast-close {
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  
+  @keyframes toast-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Audio/video calling states */
+  .muted.avatar::after {
+    content: "🔇";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-size: var(--font-size-xs);
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-round);
+    padding: 2px;
+  }
+  
+  .speaking {
+    box-shadow: 0 0 0 2px var(--status-online);
+  }
+  
+  .deafened.avatar::after {
+    content: "🔇";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-size: var(--font-size-xs);
+    background-color: var(--danger);
+    border-radius: var(--radius-round);
+    padding: 2px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    .members-sidebar {
+      display: none;
+    }
+    
+    .members-sidebar.active {
+      display: block;
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      z-index: 10;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .channels-sidebar {
+      width: 200px;
+    }
+    
+    .modal-container {
+      width: 90%;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .channels-sidebar {
+      display: none;
+    }
+    
+    .channels-sidebar.active {
+      display: block;
+      position: absolute;
+      left: 72px;
+      top: 0;
+      height: 100%;
+      z-index: 10;
+    }
+  }
+  
+  /* Make body and contenteditable elements unselectable by default */
+  body, [contenteditable] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Allow text selection inside messages and inputs */
+  .message-text, input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
