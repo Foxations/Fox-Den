@@ -1,0 +1,214 @@
+/* Den Settings - Members Tab */
+
+/* Members List */
+.members-list {
+  margin-top: 16px;
+}
+
+.members-count {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.members-search {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.members-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.members-filter {
+  margin-left: 8px;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  font-weight: bold;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.member-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.member-badge.owner {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.member-badge.admin {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.member-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.member-role {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.member-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.member-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.member-action-btn.danger {
+  color: var(--color-danger);
+}
+
+.member-action-btn:hover {
+  text-decoration: underline;
+}
+
+/* Role assignment modal */
+.role-assignment-modal {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.role-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.role-modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.role-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.role-assignment-member {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.role-member-name {
+  font-weight: bold;
+  margin-left: 12px;
+}
+
+.role-list {
+  margin-top: 16px;
+}
+
+.role-checkbox-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.role-checkbox {
+  margin-right: 12px;
+}
+
+.role-assignment-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.role-assignment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+/* Empty state */
+.no-members-message {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.no-members-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  opacity: 0.7;
+} 

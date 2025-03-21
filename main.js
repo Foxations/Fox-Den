@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Menu, Tray, dialog, nativeImage, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, Tray, dialog, nativeImage, desktopCapturer, session } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const { createMenu } = require('./electron/menu');
@@ -13,6 +13,10 @@ let tray = null;
 // Windows-specific optimization for game capture
 app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
+
+// Set permissions for screen capturing
+app.commandLine.appendSwitch('enable-features', 'ScreenCaptureKit');
+app.commandLine.appendSwitch('enable-features', 'MediaCaptureAPI');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
 try {
@@ -34,6 +38,13 @@ function createWindow() {
     maximized: false
   });
 
+  // Get the saved theme or default to dark
+  const savedTheme = store.get('foxden-theme') || 'dark';
+  
+  // Use the appropriate icon based on the saved theme
+  const iconName = savedTheme === 'light' ? 'FENNEC_256x256.png' : 'FOX_256x256.png';
+  const iconPath = path.join(__dirname, `src/assets/icons/png/${iconName}`);
+
   // Create the browser window
   mainWindow = new BrowserWindow({
     width: windowState.width,
@@ -43,15 +54,21 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
+      enableRemoteModule: false,
+      // Enable screen capture API
+      enableBlinkFeatures: 'GetUserMedia,MediaStreamTrack',
+      // Enable hardware acceleration
+      enableAcceleratedCanvas: true,
+      // Enable desktop capture
+      enableDesktopCapture: true
     },
-    icon: path.join(__dirname, 'src/assets/icons/png/FOX_64x64.png'),
-    titleBarStyle: 'hidden',
+    icon: iconPath,
     frame: false,
-    backgroundColor: '#121212'
+    titleBarStyle: 'hidden'
   });
 
   // Create application menu
@@ -67,6 +84,12 @@ function createWindow() {
 
   // Load the index.html
   mainWindow.loadFile(path.join(__dirname, 'src/index.html'));
+
+  // Apply the correct icon after the window has loaded
+  mainWindow.webContents.on('did-finish-load', () => {
+    const savedTheme = store.get('foxden-theme') || 'dark';
+    forceTaskbarIconRefresh(savedTheme);
+  });
 
   // Restore maximized state if needed
   if (windowState.maximized) {
@@ -98,10 +121,136 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
+  // Set up the display media request handler for screen sharing
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    console.log('Main process: Display media request received');
+    
+    // Always cancel the browser's native picker because we use our own UI
+    // This prevents the browser from showing its own picker and lets us use our custom UI
+    callback({ cancel: true });
+    
+    // Get all available sources to send to our custom UI
+    desktopCapturer.getSources({
+      types: ['window', 'screen'],
+      thumbnailSize: { width: 320, height: 180 },
+      fetchWindowIcons: true
+    }).then((sources) => {
+      console.log(`Main process: Found ${sources.length} sources for display media`);
+      
+      // Send the sources to the renderer for our custom picker
+      if (sources.length > 0 && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('screen-share-sources', sources);
+      }
+    }).catch((error) => {
+      console.error('Main process: Error getting sources for display media:', error);
+    });
+  });
+
   app.on('activate', () => {
     // On macOS it's common to re-create a window when the dock icon is clicked
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    }
+  });
+
+  // Screen source handler
+  ipcMain.handle('get-screen-sources', async () => {
+    try {
+      console.log('Main: Fetching screen sources with desktopCapturer');
+      // Get all available sources (windows and screens)
+      const sources = await desktopCapturer.getSources({
+        types: ['window', 'screen'],
+        thumbnailSize: { width: 320, height: 180 },
+        fetchWindowIcons: true
+      });
+      
+      console.log(`Main: Found ${sources.length} sources`);
+      
+      // Process sources to proper format for renderer
+      return sources.map(source => {
+        // Convert thumbnail to data URL
+        let thumbnail = null;
+        if (source.thumbnail) {
+          thumbnail = source.thumbnail.toDataURL();
+        }
+        
+        // Convert appIcon to data URL if it exists
+        let appIcon = null;
+        if (source.appIcon && source.appIcon.toDataURL) {
+          appIcon = source.appIcon.toDataURL();
+        }
+        
+        // Identify source type and return object with metadata for debugging
+        const sourceType = source.id.includes('screen:') ? 'screen' : 'window';
+        
+        return {
+          id: source.id,
+          name: source.name,
+          thumbnail: thumbnail,
+          appIcon: appIcon,
+          type: sourceType,
+          displayId: sourceType === 'screen' ? source.id.split(':')[1] : null
+        };
+      });
+    } catch (error) {
+      console.error('Main: Error getting screen sources:', error);
+      return [];
+    }
+  });
+  
+  // Add a dedicated handler for screen capture
+  ipcMain.handle('capture-screen', async (event, { sourceId, options }) => {
+    console.log('Main process: Received screen capture request for source:', sourceId);
+    
+    try {
+      // Verify the source exists
+      const sources = await desktopCapturer.getSources({
+        types: ['window', 'screen'],
+        thumbnailSize: { width: 1, height: 1 } // Minimal size for performance
+      });
+      
+      // Find the source
+      const source = sources.find(s => s.id === sourceId);
+      if (!source) {
+        console.warn(`Main process: Source with ID ${sourceId} not found`);
+        return { success: false, error: 'Source not found' };
+      }
+      
+      console.log('Main process: Found source:', source.id, source.name);
+      
+      // The main process can only help identify if the source exists
+      // The actual capture must happen in the renderer
+      return { 
+        success: true, 
+        source: {
+          id: source.id,
+          name: source.name
+        }
+      };
+    } catch (error) {
+      console.error('Main process: Error in screen capture:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Add a simplified handler to get desktop sources for screen sharing
+  ipcMain.handle('get-desktop-sources', async () => {
+    try {
+      console.log('Main process: Getting desktop sources for screen sharing');
+      const sources = await desktopCapturer.getSources({
+        types: ['window', 'screen'],
+        thumbnailSize: { width: 1, height: 1 } // Minimal size to improve performance
+      });
+      
+      // Return just the essential information to improve performance
+      return sources.map(source => ({
+        id: source.id,
+        name: source.name,
+        type: source.id.includes('screen:') ? 'screen' : 'window'
+      }));
+    } catch (error) {
+      console.error('Error getting desktop sources:', error);
+      return [];
     }
   });
 }).catch(error => {
@@ -136,30 +285,6 @@ ipcMain.on('window-maximize', () => {
 
 ipcMain.on('window-close', () => {
   if (mainWindow) mainWindow.close();
-});
-
-// Screen sharing source detection
-ipcMain.handle('get-screen-sources', async () => {
-  try {
-    const sources = await desktopCapturer.getSources({
-      types: ['screen', 'window'],
-      thumbnailSize: { width: 320, height: 180 },
-      fetchWindowIcons: true
-    });
-    
-    // Process sources to add additional metadata
-    return sources.map(source => ({
-      id: source.id,
-      name: source.name,
-      displayId: source.display_id,
-      appIcon: source.appIcon ? source.appIcon.toDataURL() : null,
-      thumbnail: source.thumbnail.toDataURL(),
-      type: source.id.includes('screen') ? 'screen' : 'window',
-    }));
-  } catch (error) {
-    console.error('Error getting screen sources:', error);
-    return [];
-  }
 });
 
 // Get display details using Electron's screen API
@@ -313,6 +438,60 @@ ipcMain.on('show-settings', () => {
 // Toggle theme handler
 ipcMain.on('toggle-theme', () => {
   if (mainWindow) mainWindow.webContents.send('toggle-theme');
+});
+
+// Function to force taskbar icon refresh
+function forceTaskbarIconRefresh(theme) {
+  if (!mainWindow) return;
+  
+  const iconSize = process.platform === 'win32' ? 256 : 64;
+  const iconName = theme === 'light' ? `FENNEC_${iconSize}x${iconSize}.png` : `FOX_${iconSize}x${iconSize}.png`;
+  const iconPath = path.join(__dirname, `src/assets/icons/png/${iconName}`);
+  
+  try {
+    const icon = nativeImage.createFromPath(iconPath);
+    
+    // Set the icon
+    mainWindow.setIcon(icon);
+    
+    // Windows-specific additional techniques
+    if (process.platform === 'win32') {
+      // Flash the taskbar icon briefly (without flashing the window)
+      mainWindow.flashFrame(true);
+      setTimeout(() => mainWindow.flashFrame(false), 100);
+      
+      // Set and clear overlay icon
+      mainWindow.setOverlayIcon(icon, '');
+      setTimeout(() => mainWindow.setOverlayIcon(null, ''), 150);
+      
+      // Force a BrowserWindow reload (without reloading content)
+      const bounds = mainWindow.getBounds();
+      mainWindow.setBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height + 1
+      });
+      setTimeout(() => {
+        mainWindow.setBounds(bounds);
+      }, 200);
+    }
+    
+    console.log(`Forced taskbar icon refresh to ${iconName}`);
+  } catch (error) {
+    console.error('Error forcing taskbar icon refresh:', error);
+  }
+}
+
+// Theme changed handler - update application icon
+ipcMain.on('theme-changed', (event, theme) => {
+  if (!mainWindow) return;
+  
+  // Store the theme in electron-store for app restart consistency
+  store.set('foxden-theme', theme);
+  
+  // Force taskbar icon refresh
+  forceTaskbarIconRefresh(theme);
 });
 
 // Detect if running on Wayland (Linux)

@@ -1,57 +1,122 @@
-/* Settings Panel */
+/* Settings Panel Adjustments */
+/* Import user settings CSS files */
+@import url('./user-settings/my-account.css');
+@import url('./user-settings/payment-settings.css');
+@import url('./user-settings/app-settings.css');
+@import url('./user-settings/activity-settings.css');
+@import url('./user-settings/profiles.css');
+@import url('./user-settings/content-social.css');
+@import url('./user-settings/data-privacy.css');
+/* Import den settings CSS files */
+@import url('./den-settings/main.css');
+
 .settings-panel {
   position: fixed;
-  top: 32px; /* adjusted from 55px */
+  top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% - 32px); /* updated height */
-  background-color: var(--bg-primary);
-  z-index: 1000;
+  height: 100%;
+  background-color: var(--bg-tertiary);
   display: flex;
   flex-direction: column;
+  z-index: var(--z-index-modal);
+  opacity: 0;
+  visibility: hidden;
   transform: translateX(100%);
-  transition: transform var(--transition-long) var(--ease-out);
-  margin-top: 0; /* changed from 48px to 0 so header sits right below the titlebar */
+  transition: opacity var(--transition-medium) var(--ease-out), 
+              visibility var(--transition-medium) var(--ease-out), 
+              transform var(--transition-medium) var(--ease-out);
+}
+
+body.with-titlebar .settings-panel {
+  top: 32px;
+  height: calc(100% - 32px);
 }
 
 .settings-panel.active {
+  opacity: 1;
+  visibility: visible;
   transform: translateX(0);
 }
 
 .settings-header {
-  height: 60px;
-  padding: 0 var(--spacing-xl);
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+  padding: 16px 20px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  background-color: var(--bg-tertiary);
+  z-index: 1;
+  width: 100%;
+  margin-top: 25px;
+}
+
+body.with-titlebar .settings-header {
+  margin-top: 0;
+  padding-top: 40px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
 }
 
 .close-settings {
   background: none;
   border: none;
-  color: var(--text-primary);
-  font-size: var(--font-size-xl);
   cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 24px;
+  border-radius: 50%;
+  transition: background var(--transition-short) var(--ease-out);
+}
+
+.close-settings:hover {
+  background-color: var(--bg-secondary);
+}
+
+.settings-content-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .settings-sidebar {
-  width: 220px;
+  width: 218px;
   background-color: var(--bg-secondary);
-  height: calc(100% - 60px);
+  padding: 20px 6px 20px 20px;
   overflow-y: auto;
-  position: absolute;
-  left: 0;
-  top: 60px;
-  /* padding: var(--spacing-md) 0; */
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.settings-group-header {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 6px 10px;
+  margin-top: 20px;
+  margin-bottom: 2px;
 }
 
 .settings-category {
-  padding: var(--spacing-md) var(--spacing-xl);
-  cursor: pointer;
+  padding: 6px 10px;
+  margin-bottom: 2px;
   color: var(--text-secondary);
-  transition: background-color var(--transition-short) var(--ease-out),
-              color var(--transition-short) var(--ease-out);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .settings-category:hover {
@@ -62,525 +127,180 @@
 .settings-category.active {
   background-color: var(--bg-hover);
   color: var(--text-primary);
+  font-weight: 500;
 }
 
 .settings-category.danger {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 .settings-divider {
   height: 1px;
   background-color: var(--border-color);
-  margin: var(--spacing-md) var(--spacing-md);
+  margin: 8px 10px;
+  opacity: 0.6;
+}
+
+.badge {
+  background-color: var(--color-danger);
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.notification-badge {
+  background-color: var(--color-danger);
+  color: white;
+  font-size: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  margin-right: 8px;
 }
 
 .settings-content {
-  margin-left: 220px;
-  padding: var(--spacing-xl);
-  height: calc(100% - 60px);
+  flex: 1;
+  padding: 20px 40px;
   overflow-y: auto;
+  background-color: var(--bg-tertiary);
+  position: relative;
 }
 
-/* Account Settings Styles */
+.settings-section-header {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
 .settings-section {
-  margin-bottom: var(--spacing-xxl);
+  margin-bottom: 32px;
 }
 
 .settings-section h3 {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-lg);
-}
-
-.account-info {
-  display: flex;
-  padding: var(--spacing-xl) 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.account-avatar {
-  margin-right: var(--spacing-xl);
-  position: relative;
-}
-
-.avatar-wrapper {
-  width: 80px;
-  height: 80px;
-  border-radius: var(--radius-round);
-  background-color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: white;
-}
-
-.avatar-edit {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: var(--bg-primary);
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: thin solid var(--border-color);
   color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-  transition: background-color var(--transition-short) var(--ease-out);
 }
 
-.avatar-edit:hover {
-  background-color: var(--bg-hover);
-}
-
-.account-details {
-  flex: 1;
-}
-
-.edit-field {
-  margin-bottom: var(--spacing-md);
-}
-
-.edit-field label {
-  display: block;
-  font-size: var(--font-size-xs);
+.settings-section h4 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.edit-field input {
-  width: 100%;
-  max-width: 400px;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: var(--spacing-md);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .settings-group {
-  margin: var(--spacing-xxl) 0;
-  padding-bottom: var(--spacing-xl);
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 32px;
 }
 
-.settings-group h4 {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-md);
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .settings-sidebar {
+    width: 180px;
+  }
+  
+  .settings-content {
+    padding: 20px;
+  }
 }
 
-.change-button {
-  background-color: var(--accent);
-  color: white;
+/* Settings buttons */
+.settings-button {
+  background-color: var(--bg-secondary);
   border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-sm);
-  margin: var(--spacing-xs) 0;
+  border-radius: 3px;
+  color: var(--text-primary);
+  padding: 8px 16px;
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background-color var(--transition-short) var(--ease-out);
+  margin-right: 8px;
+  margin-bottom: 8px;
+  min-height: 32px;
 }
 
-.change-button:hover {
-  background-color: var(--accent-hover);
+.settings-button:hover {
+  background-color: var(--bg-hover);
 }
 
-.danger-zone {
-  margin-top: var(--spacing-xxl);
-  padding: var(--spacing-md);
-  background-color: var(--danger-bg);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--danger);
+.settings-button.danger {
+  color: var(--text-on-danger);
+  background-color: var(--color-danger);
 }
 
-.danger-zone h4 {
-  color: var(--danger);
-  margin-bottom: var(--spacing-md);
+.settings-button.danger:hover {
+  background-color: var(--color-danger-hover);
 }
 
-.danger-zone p {
-  font-size: var(--font-size-sm);
-  margin: var(--spacing-md) 0;
-}
-
-.disable-button, .delete-button {
-  background-color: var(--danger);
-  color: white;
+.link-button {
+  background: none;
   border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-sm);
-  margin: var(--spacing-xs) 0;
+  color: var(--text-accent);
+  font-size: 14px;
   cursor: pointer;
-  transition: background-color var(--transition-short) var (--ease-out);
+  padding: 0;
+  text-decoration: underline;
 }
 
-.disable-button:hover, .delete-button:hover {
-  background-color: var(--danger-hover);
-}
-
-/* Profile Settings */
-.profile-preview {
-  background-color: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  max-width: 320px;
-}
-
-.profile-preview-header {
+.account-removal-actions {
   display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
+  gap: 16px;
+  margin-top: 16px;
 }
 
-.profile-bio-input {
-  width: 100%;
-  height: 80px;
-  resize: none;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-}
-
-.profile-color-picker {
-  display: flex;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
-}
-
-.color-option {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-round);
-  cursor: pointer;
-  transition: transform var(--transition-short) var(--ease-out);
-}
-
-.color-option:hover {
-  transform: scale(1.1);
-}
-
-.color-option.active {
-  box-shadow: 0 0 0 2px var(--text-primary);
-}
-
-/* Appearance Settings */
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-md);
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color var(--transition-short) var(--ease-out);
-}
-
-.theme-option.active {
-  border-color: var(--accent);
-}
-
-.theme-preview {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  position: relative;
-}
-
-.theme-preview.dark {
-  background-color: #121212;
-}
-
-.theme-preview.light {
-  background-color: #ffffff;
-}
-
-.theme-preview-sidebar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  background-color: #1e1e1e;
-}
-
-.theme-preview.light .theme-preview-sidebar {
-  background-color: #f5f5f5;
-}
-
-.theme-info {
-  flex: 1;
-}
-
-.theme-name {
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-xs);
-}
-
-.theme-description {
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-}
-
-.font-option {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-md);
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color var(--transition-short) var(--ease-out);
-}
-
-.font-option.active {
-  border-color: var(--accent);
-}
-
-.font-preview {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.font-info {
-  flex: 1;
-}
-
-.font-name {
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-xs);
-}
-
-.font-description {
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-}
-
-/* Privacy Settings */
-.privacy-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.privacy-option-info {
-  flex: 1;
-}
-
-.privacy-option-name {
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-xs);
-}
-
-.privacy-option-description {
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-}
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-}
-
-.toggle-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--bg-tertiary);
-  transition: var(--transition-short);
-  border-radius: 34px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: var(--text-secondary);
-  transition: var(--transition-short);
-  border-radius: 50%;
-}
-
-.toggle-input:checked + .toggle-slider {
-  background-color: var(--accent);
-}
-
-.toggle-input:checked + .toggle-slider:before {
-  transform: translateX(20px);
-  background-color: white;
-}
-
-/* Keybind Settings */
-.keybind-list {
-  margin-top: var(--spacing-md);
-}
-
-.keybind-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var (--border-color);
-}
-
-.keybind-action {
-  font-weight: var(--font-weight-medium);
-}
-
-.keybind-keys {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-.keybind-key {
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-family: monospace;
-  min-width: 24px;
-  text-align: center;
-}
-
-.reset-keybind {
-  margin-left: var(--spacing-md);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color var(--transition-short) var(--ease-out);
-}
-
-.reset-keybind:hover {
-  color: var(--text-primary);
-}
-
-/* Voice & Video Settings */
-.audio-bar {
-  height: 24px;
-  background-color: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  margin-top: var(--spacing-xs);
-  position: relative;
-  overflow: hidden;
-}
-
-.audio-level {
-  height: 100%;
-  background-color: var(--accent);
-  width: 0%;
-  transition: width 0.1s linear;
-}
-
-.input-sensitivity {
-  margin-top: var(--spacing-md);
-}
-
-.sensitivity-slider {
-  width: 100%;
-  margin-top: var(--spacing-sm);
-}
-
-.quality-option {
-  margin-top: var(--spacing-md);
-}
-
-.quality-slider {
-  width: 100%;
-  margin-top: var(--spacing-sm);
-}
-
-.quality-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  margin-top: var(--spacing-xs);
-}
-
-/* Notifications Settings */
-.notification-toggle {
-  margin-top: var(--spacing-md);
-}
-
-.notifications-channel-list {
-  margin-top: var(--spacing-lg);
-}
-
-.channel-notification {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.channel-notification-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.notification-level-select {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+/* Settings select */
+.settings-select {
+  background-color: var(--bg-secondary);
   border: none;
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 180px;
 }
 
-/* Language Settings */
-.language-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.language-name {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.language-flag {
-  width: 24px;
+.settings-radio {
+  margin-right: 8px;
+  width: 16px;
   height: 16px;
-  border-radius: 2px;
-  object-fit: cover;
 }
 
-.language-radio {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--accent);
+.settings-radio input[type="radio"] {
+  margin-right: 8px;
+}
+
+.whats-new-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .boosts-info {
+    flex-direction: column;
+  }
+  
+  .gift-item, .device-item, .connection-type, .registered-app, .merch-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .gift-icon, .device-icon, .connection-icon, .app-icon, .merch-image {
+    margin-bottom: var(--spacing-md);
+    margin-right: 0;
+  }
 }

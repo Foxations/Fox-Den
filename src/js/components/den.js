@@ -4,6 +4,9 @@
  * Handles all functionality related to dens (servers)
  */
 
+// Remove the import statement
+// import DenSettingsManager from './den-settings.js';
+
 const DenManager = {
     // Track initialization state
     initialized: false,
@@ -13,6 +16,11 @@ const DenManager = {
      */
     init: function() {
       if (this.initialized) return;
+      
+      // Initialize DenSettingsManager
+      if (window.DenSettingsManager && typeof window.DenSettingsManager.init === 'function') {
+        window.DenSettingsManager.init();
+      }
       
       // Cache DOM elements
       this.densList = document.getElementById('dens-list');
@@ -75,8 +83,17 @@ const DenManager = {
         const denElement = document.createElement('div');
         denElement.className = `den ${den.id === activeDenId ? 'active' : ''}`;
         denElement.dataset.denId = den.id;
-        denElement.textContent = den.icon || den.name.substring(0, 2);
-        denElement.title = den.name;
+
+        // Generate the den title
+        if (den.icon) {
+          denElement.textContent = den.icon; // Use the icon if provided
+        } else {
+          const words = den.name.split(' ');
+          const initials = words.map(word => word[0].toUpperCase()).join('').substring(0, 2);
+          denElement.textContent = initials; // Use the first two letters of the name
+        }
+
+        denElement.title = den.name; // Set the full name as the tooltip
         
         // Insert before the add-den button
         this.densList.appendChild(denElement);
@@ -140,9 +157,12 @@ const DenManager = {
      * @private
      */
     _handleCreateDenSubmit: function() {
-      const denName = document.getElementById('den-name').value.trim();
+      const denNameInput = document.getElementById('den-name');
+      const denName = denNameInput.value.trim(); // Trim whitespace
+      
       if (!denName) {
-        Utils.showToast('Please enter a den name', 'error');
+        Utils.showToast('Please enter a valid den name', 'error');
+        denNameInput.focus(); // Focus the input for user convenience
         return;
       }
       
@@ -223,7 +243,7 @@ const DenManager = {
         {
           label: 'Den Settings',
           icon: '⚙️',
-          onClick: () => Utils.showToast('Den settings would open here', 'info')
+          onClick: () => this._showDenSettings()
         },
         { divider: true },
         {
@@ -242,7 +262,16 @@ const DenManager = {
       
       Utils.showContextMenu(menuItems, rect.left, rect.bottom + 5);
     },
-    
+
+    /**
+     * Show den settings
+     * @private
+     */
+    _showDenSettings: function() {
+        // Use the global variable instead
+        window.DenSettingsManager.showSettings();
+    },
+
     /**
      * Handle leaving a den
      * @private

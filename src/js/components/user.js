@@ -59,38 +59,67 @@ const UserManager = {
      */
     _setupEventListeners: function() {
       // Handle user profile button click
-      this.userProfileButton.addEventListener('click', () => {
-        this._toggleUserProfileMenu();
-      });
+      if (this.userProfileButton) {
+        this.userProfileButton.addEventListener('click', () => {
+          this._toggleUserProfileMenu();
+        });
+      }
+      
+      // Handle microphone toggle button
+      const micButton = document.getElementById('toggle-mic');
+      if (micButton) {
+        micButton.addEventListener('click', () => {
+          this.toggleMic();
+        });
+      }
+      
+      // Handle headset toggle button
+      const headsetButton = document.getElementById('toggle-headset');
+      if (headsetButton) {
+        headsetButton.addEventListener('click', () => {
+          this.toggleHeadset();
+        });
+      }
       
       // Handle user profile modal close
-      const closeButtons = this.userProfileModal.querySelectorAll('.modal-close');
-      closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          this.userProfileModal.classList.remove('active');
-        });
-      });
-      
-      // Handle modal backdrop click
-      this.userProfileModal.querySelector('.modal-backdrop').addEventListener('click', () => {
-        this.userProfileModal.classList.remove('active');
-      });
+      if (this.userProfileModal) {
+        const closeButtons = this.userProfileModal.querySelectorAll('.modal-close');
+        if (closeButtons) {
+          closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+              this.userProfileModal.classList.remove('active');
+            });
+          });
+        }
+        
+        // Handle modal backdrop click
+        const modalBackdrop = this.userProfileModal.querySelector('.modal-backdrop');
+        if (modalBackdrop) {
+          modalBackdrop.addEventListener('click', () => {
+            this.userProfileModal.classList.remove('active');
+          });
+        }
+      }
       
       // Handle members sidebar
-      this.membersSidebar.addEventListener('click', (e) => {
-        const memberElement = e.target.closest('.member');
-        if (memberElement) {
-          const userId = memberElement.dataset.userId;
-          if (userId) {
-            this._showUserProfile(userId);
+      if (this.membersSidebar) {
+        this.membersSidebar.addEventListener('click', (e) => {
+          const memberElement = e.target.closest('.member');
+          if (memberElement) {
+            const userId = memberElement.dataset.userId;
+            if (userId) {
+              this._showUserProfile(userId);
+            }
           }
-        }
-      });
+        });
+      }
       
       // Toggle members sidebar visibility on mobile
-      document.getElementById('channel-members-toggle').addEventListener('click', () => {
-        this.toggleMembersSidebar();
-      });
+      if (document.getElementById('channel-members-toggle')) {
+        document.getElementById('channel-members-toggle').addEventListener('click', () => {
+          this.toggleMembersSidebar();
+        });
+      }
     },
     
     /**
@@ -100,7 +129,9 @@ const UserManager = {
       const isMobile = window.innerWidth <= 1024;
       
       if (isMobile) {
-        this.membersSidebar.classList.toggle('active');
+        if (this.membersSidebar) {
+          this.membersSidebar.classList.toggle('active');
+        }
       }
     },
     
@@ -122,10 +153,25 @@ const UserManager = {
       if (!user) return;
       
       // Update user initials
-      this.userInitials.textContent = user.avatar || Utils.getInitials(user.username);
+      if (this.userInitials) {
+        this.userInitials.textContent = user.avatar || Utils.getInitials(user.username);
+      }
       
       // Update status indicator
-      this.userStatusIndicator.className = `user-status ${user.status}`;
+      if (this.userStatusIndicator) {
+        this.userStatusIndicator.className = `user-status ${user.status}`;
+      }
+      
+      // Update username and status text in the user controls
+      const usernameElement = document.querySelector('.user-controls .username');
+      if (usernameElement) {
+        usernameElement.textContent = user.username;
+      }
+      
+      const statusTextElement = document.querySelector('.user-controls .status-text');
+      if (statusTextElement) {
+        statusTextElement.textContent = this.getStatusName(user.status);
+      }
     },
     
     /**
@@ -133,16 +179,43 @@ const UserManager = {
      * @private
      */
     _toggleUserProfileMenu: function() {
+      // Check if the menu is already open
+      const existingMenu = document.querySelector('.context-menu.user-profile-menu');
+      if (existingMenu) {
+        // If the menu is already open, close it with animation and return
+        Utils.closeContextMenu(existingMenu);
+        return;
+      }
+      
       const user = AppState.get('currentUser');
       if (!user) return;
       
-      // Show context menu near the user avatar
+      // Show context menu near the user avatar with specific positioning
       const rect = this.userProfileButton.getBoundingClientRect();
+      
+      // Create status submenu items with descriptions
+      const statusSubmenuHTML = `
+        <div class="status-submenu">
+          ${this.statusOptions.map(status => `
+            <div class="status-submenu-item ${user.status === status.id ? 'active' : ''}" data-status="${status.id}">
+              <div class="status-title">
+                ${status.id === 'dnd' ? 'Do Not Disturb' : status.name}
+              </div>
+              ${status.id === 'dnd' ? 
+                '<div class="status-description">You will not receive any desktop notifications.</div>' : ''}
+              ${status.id === 'offline' ? 
+                '<div class="status-description">You will not appear online, but will have full access to all of FoxDen.</div>' : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
       
       const menuItems = [
         {
           label: `${this.getStatusEmoji(user.status)} ${this.getStatusName(user.status)}`,
-          onClick: () => this._showStatusMenu()
+          customClass: 'status-item',
+          customHTML: statusSubmenuHTML,
+          onClick: () => {} // Empty function since we're using hover instead of click
         },
         { divider: true },
         {
@@ -169,7 +242,19 @@ const UserManager = {
         }
       ];
       
-      Utils.showContextMenu(menuItems, rect.left, rect.bottom + 5);
+      // Use class for fixed positioning instead of dynamic positioning
+      Utils.showContextMenu(menuItems, rect.left, rect.bottom + 5, 'user-profile-menu');
+      
+      // Add event listeners to status submenu items
+      const statusItems = document.querySelectorAll('.status-submenu-item');
+      statusItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const statusId = item.dataset.status;
+          this.changeStatus(statusId);
+          Utils.closeContextMenu(document.querySelector('.context-menu.user-profile-menu'));
+        });
+      });
     },
     
     /**
@@ -193,21 +278,6 @@ const UserManager = {
     },
     
     /**
-     * Show the status selection menu
-     * @private
-     */
-    _showStatusMenu: function() {
-      const rect = this.userProfileButton.getBoundingClientRect();
-      
-      const menuItems = this.statusOptions.map(status => ({
-        label: `${status.emoji} ${status.name}`,
-        onClick: () => this.changeStatus(status.id)
-      }));
-      
-      Utils.showContextMenu(menuItems, rect.left, rect.bottom + 5);
-    },
-    
-    /**
      * Change the user's status
      * @param {string} statusId - The new status ID
      */
@@ -218,7 +288,9 @@ const UserManager = {
       AppState.set('currentUser', user);
       
       // Update UI
-      this.userStatusIndicator.className = `user-status ${statusId}`;
+      if (this.userStatusIndicator) {
+        this.userStatusIndicator.className = `user-status ${statusId}`;
+      }
       
       // Show toast confirmation
       Utils.showToast(`Status set to ${this.getStatusName(statusId)}`, 'success');
@@ -358,14 +430,18 @@ const UserManager = {
     renderMembersList: function() {
       const denId = AppState.get('activeDen');
       if (!denId) {
-        this.membersSidebar.innerHTML = '';
+        if (this.membersSidebar) {
+          this.membersSidebar.innerHTML = '';
+        }
         return;
       }
       
       const members = AppState.getMembersForDen(denId) || [];
       
       // Clear existing members
-      this.membersSidebar.innerHTML = '';
+      if (this.membersSidebar) {
+        this.membersSidebar.innerHTML = '';
+      }
       
       // Group members by status
       const online = members.filter(m => m.status === 'online' || m.status === 'idle' || m.status === 'dnd');
@@ -387,7 +463,9 @@ const UserManager = {
           onlineGroup.appendChild(memberElement);
         });
         
-        this.membersSidebar.appendChild(onlineGroup);
+        if (this.membersSidebar) {
+          this.membersSidebar.appendChild(onlineGroup);
+        }
       }
       
       // Create offline members group
@@ -406,7 +484,9 @@ const UserManager = {
           offlineGroup.appendChild(memberElement);
         });
         
-        this.membersSidebar.appendChild(offlineGroup);
+        if (this.membersSidebar) {
+          this.membersSidebar.appendChild(offlineGroup);
+        }
       }
     },
     
@@ -450,53 +530,55 @@ const UserManager = {
       if (!user) return;
       
       // Update profile modal content
-      const avatar = this.userProfileModal.querySelector('.avatar-wrapper');
-      avatar.textContent = user.avatar || Utils.getInitials(user.username);
-      avatar.style.backgroundColor = Utils.getRandomAvatarColor();
-      
-      const statusIndicator = this.userProfileModal.querySelector('.status-indicator');
-      statusIndicator.className = `status-indicator ${user.status}`;
-      
-      const username = this.userProfileModal.querySelector('.profile-username');
-      username.textContent = user.username;
-      
-      const userTag = this.userProfileModal.querySelector('.profile-tag');
-      userTag.textContent = `#${user.tag || '0000'}`;
-      
-      const joined = this.userProfileModal.querySelector('.profile-joined');
-      joined.textContent = user.joinedAt ? Utils.formatDate(user.joinedAt, true) : 'Unknown';
-      
-      // Update buttons based on whether it's the current user
-      const isCurrentUser = user.id === AppState.get('currentUser').id;
-      const messageButton = this.userProfileModal.querySelector('.profile-button.message');
-      const addFriendButton = this.userProfileModal.querySelector('.profile-button.add-friend');
-      
-      if (isCurrentUser) {
-        messageButton.style.display = 'none';
-        addFriendButton.textContent = 'Edit Profile';
-        addFriendButton.onclick = () => {
-          this.userProfileModal.classList.remove('active');
-          this._editProfile();
-        };
-      } else {
-        messageButton.style.display = 'block';
-        addFriendButton.textContent = 'Add Friend';
+      if (this.userProfileModal) {
+        const avatar = this.userProfileModal.querySelector('.avatar-wrapper');
+        avatar.textContent = user.avatar || Utils.getInitials(user.username);
+        avatar.style.backgroundColor = Utils.getRandomAvatarColor();
         
-        // Set up message button
-        messageButton.onclick = () => {
-          this.userProfileModal.classList.remove('active');
-          this._startDirectMessage(user);
-        };
+        const statusIndicator = this.userProfileModal.querySelector('.status-indicator');
+        statusIndicator.className = `status-indicator ${user.status}`;
         
-        // Set up add friend button
-        addFriendButton.onclick = () => {
-          this.userProfileModal.classList.remove('active');
-          this._addFriend(user);
-        };
+        const username = this.userProfileModal.querySelector('.profile-username');
+        username.textContent = user.username;
+        
+        const userTag = this.userProfileModal.querySelector('.profile-tag');
+        userTag.textContent = `#${user.tag || '0000'}`;
+        
+        const joined = this.userProfileModal.querySelector('.profile-joined');
+        joined.textContent = user.joinedAt ? Utils.formatDate(user.joinedAt, true) : 'Unknown';
+        
+        // Update buttons based on whether it's the current user
+        const isCurrentUser = user.id === AppState.get('currentUser').id;
+        const messageButton = this.userProfileModal.querySelector('.profile-button.message');
+        const addFriendButton = this.userProfileModal.querySelector('.profile-button.add-friend');
+        
+        if (isCurrentUser) {
+          messageButton.style.display = 'none';
+          addFriendButton.textContent = 'Edit Profile';
+          addFriendButton.onclick = () => {
+            this.userProfileModal.classList.remove('active');
+            this._editProfile();
+          };
+        } else {
+          messageButton.style.display = 'block';
+          addFriendButton.textContent = 'Add Friend';
+          
+          // Set up message button
+          messageButton.onclick = () => {
+            this.userProfileModal.classList.remove('active');
+            this._startDirectMessage(user);
+          };
+          
+          // Set up add friend button
+          addFriendButton.onclick = () => {
+            this.userProfileModal.classList.remove('active');
+            this._addFriend(user);
+          };
+        }
+        
+        // Show the modal
+        this.userProfileModal.classList.add('active');
       }
-      
-      // Show the modal
-      this.userProfileModal.classList.add('active');
     },
     
     /**
@@ -517,6 +599,64 @@ const UserManager = {
     _addFriend: function(user) {
       // In a real app, this would send a friend request
       Utils.showToast(`Friend request sent to ${user.username}`, 'success');
+    },
+    
+    /**
+     * Toggle microphone mute status
+     */
+    toggleMic: function() {
+      const micButton = document.getElementById('toggle-mic');
+      if (!micButton) return;
+      
+      const isMuted = micButton.classList.contains('muted');
+      
+      if (isMuted) {
+        // Unmute
+        micButton.classList.remove('muted');
+        // Show toast notification
+        Utils.showToast('Microphone unmuted', 'info');
+      } else {
+        // Mute
+        micButton.classList.add('muted');
+        // Show toast notification
+        Utils.showToast('Microphone muted', 'info');
+      }
+    },
+    
+    /**
+     * Toggle headset/speaker mute status (deafen toggle)
+     * When deafening, both microphone and headset are muted
+     * When undeafening, both are unmuted
+     */
+    toggleHeadset: function() {
+      const headsetButton = document.getElementById('toggle-headset');
+      const micButton = document.getElementById('toggle-mic');
+      if (!headsetButton) return;
+      
+      const isDeafened = headsetButton.classList.contains('muted');
+      
+      if (isDeafened) {
+        // Unmute headset
+        headsetButton.classList.remove('muted');
+        // Show toast notification
+        Utils.showToast('Speaker unmuted (undeafened)', 'info');
+        
+        // Also unmute microphone
+        if (micButton) {
+          micButton.classList.remove('muted');
+        }
+      } else {
+        // Mute headset (deafen)
+        headsetButton.classList.add('muted');
+        
+        // Also mute microphone
+        if (micButton) {
+          micButton.classList.add('muted');
+        }
+        
+        // Show toast notification
+        Utils.showToast('Deafened (microphone and speaker muted)', 'info');
+      }
     }
   };
   

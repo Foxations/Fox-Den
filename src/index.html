@@ -11,8 +11,12 @@
   <link rel="stylesheet" href="css/components/voice.css">
   <link rel="stylesheet" href="css/components/screen-selector.css">
   <link rel="stylesheet" href="css/components/settings.css">
+  <link rel="stylesheet" href="css/components/userControls.css">
 </head>
 <body class="theme-dark">
+  <!-- Theme background container -->
+  <div class="theme-background"></div>
+  
   <!-- Custom titlebar for the window -->
   <div class="titlebar">
     <div class="titlebar-title">FoxDen</div>
@@ -55,23 +59,34 @@
     </div>
     
     <!-- User Controls Fixed at Bottom Left -->
-    <div class="user-controls" style="display: flex; align-items: center; justify-content: space-between;">
-      <div class="user-avatar" id="user-profile">
-        <span id="user-initials">FX</span>
-        <div class="user-status online" id="user-status-indicator"></div>
+    <div class="user-controls">
+      <div class="user-info">
+        <div class="user-avatar" id="user-profile">
+          <span id="user-initials">F</span>
+          <span class="user-status online"></span>
+        </div>
+        <div class="user-details">
+          <div class="username">FoxUser</div>
+          <div class="status-text">Invisible</div>
+        </div>
       </div>
       <div class="control-icons">
-        <div class="icon-button settings-button" id="open-settings">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
+        <div class="icon-button mic-button" id="toggle-mic" title="Mute Microphone">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 20px; min-height: 20px; width: 20px; height: 20px; max-width: 20px; max-height: 20px;">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" x2="12" y1="19" y2="22"></line>
           </svg>
         </div>
-        <div class="icon-button theme-button" id="toggle-theme">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" class="moon-icon"></path>
-            <circle cx="12" cy="12" r="5" class="sun-icon"></circle>
-            <path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" class="sun-icon"></path>
+        <div class="icon-button headset-button" id="toggle-headset" title="Deafen (Mute Microphone & Speaker)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 20px; min-height: 20px; width: 20px; height: 20px; max-width: 20px; max-height: 20px;">
+            <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path>
+          </svg>
+        </div>
+        <div class="icon-button settings-button" id="user-settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 20px; min-height: 20px; width: 20px; height: 20px; max-width: 20px; max-height: 20px;">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
           </svg>
         </div>
       </div>
@@ -121,7 +136,7 @@
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.48-8.48l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
               </svg>
             </button>
-            <textarea class="chat-input" id="message-input" placeholder="Message #welcome"></textarea>
+            <div class="chat-input empty" id="message-input" contenteditable="true" role="textbox" spellcheck="true" data-placeholder="Message #welcome"></div>
             <button class="emoji-button" id="emoji-button">
               <img src="assets/icons/png/FOX_32x32.png" alt="FoxDen Emoji">
             </button>
@@ -243,102 +258,6 @@
     </div>
   </div>
 
-  <!-- Settings Panel -->
-  <div class="settings-panel" id="settings-panel">
-    <div class="settings-header">
-      <h2>User Settings</h2>
-      <button class="close-settings" id="close-settings">✕</button>
-    </div>
-    
-    <div class="settings-sidebar" id="settings-sidebar">
-      <div class="settings-category active" data-category="account">My Account</div>
-      <div class="settings-category" data-category="profile">User Profile</div>
-      <div class="settings-category" data-category="privacy">Privacy & Safety</div>
-      <div class="settings-category" data-category="appearance">Appearance</div>
-      <div class="settings-category" data-category="accessibility">Accessibility</div>
-      <div class="settings-category" data-category="voice">Voice & Video</div>
-      <div class="settings-category" data-category="text">Text & Media</div>
-      <div class="settings-category" data-category="notifications">Notifications</div>
-      <div class="settings-category" data-category="keybinds">Keybinds</div>
-      <div class="settings-category" data-category="language">Language</div>
-      <div class="settings-divider"></div>
-      <div class="settings-category danger" data-category="logout">Log Out</div>
-    </div>
-    
-    <div class="settings-content" id="settings-content">
-      <!-- Settings content will be loaded based on the selected category -->
-    </div>
-  </div>
-
-  <!-- User profile modal -->
-  <div class="modal" id="user-profile-modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3>User Profile</h3>
-        <button class="modal-close">✕</button>
-      </div>
-      <div class="modal-content">
-        <div class="profile-header">
-          <div class="profile-avatar">
-            <div class="avatar-wrapper large">FX</div>
-            <div class="status-indicator online"></div>
-          </div>
-          <div class="profile-name-tag">
-            <div class="profile-username">FoxUser</div>
-            <div class="profile-tag">#1234</div>
-          </div>
-        </div>
-        
-        <div class="profile-section">
-          <h4>ABOUT ME</h4>
-          <div class="profile-about">A fox enthusiast who loves coding and gaming.</div>
-        </div>
-        
-        <div class="profile-section">
-          <h4>MEMBER SINCE</h4>
-          <div class="profile-joined">Feb 26, 2022</div>
-        </div>
-        
-        <div class="profile-actions">
-          <button class="profile-button message">Message</button>
-          <button class="profile-button add-friend">Add Friend</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Create/Join Den modal -->
-  <div class="modal" id="den-modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3>Create a Den</h3>
-        <button class="modal-close">✕</button>
-      </div>
-      <div class="modal-content">
-        <div class="modal-section">
-          <div class="input-group">
-            <label for="den-name">Den Name</label>
-            <input type="text" id="den-name" placeholder="Enter a den name">
-          </div>
-          <div class="input-group">
-            <label>Den Icon</label>
-            <div class="icon-selector">
-              <div class="den-icon-preview">FD</div>
-              <button class="upload-icon">Upload Image</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="modal-actions">
-          <button class="modal-button secondary" id="join-den">Join a Den</button>
-          <button class="modal-button primary" id="create-den-submit">Create</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Emoji Picker Modal -->
   <div class="modal" id="emoji-modal">
     <div class="modal-backdrop small"></div>
@@ -346,17 +265,106 @@
       <div class="emoji-picker-header">
         <input type="text" placeholder="Search for emoji" class="emoji-search">
       </div>
-      <div class="emoji-categories">
-        <div class="emoji-category active">😀</div>
-        <div class="emoji-category">🐶</div>
-        <div class="emoji-category">🍎</div>
-        <div class="emoji-category">⚽</div>
-        <div class="emoji-category">🚗</div>
-        <div class="emoji-category">💡</div>
-        <div class="emoji-category">🏳️</div>
+      
+      <!-- Categories for emojis -->
+      <div class="emoji-categories" id="default-emoji-categories">
+        <div class="emoji-category parent-category active" data-category="all">🦊</div>
+        <!-- <div class="emoji-subcategory" style="display: none;">😀</div> -->
+        <div class="emoji-subcategory" style="display: none;">🐶</div>
+        <div class="emoji-subcategory" style="display: none;">🍎</div>
+        <div class="emoji-subcategory" style="display: none;">⚽</div>
+        <div class="emoji-subcategory" style="display: none;">🚗</div>
+        <div class="emoji-subcategory" style="display: none;">💡</div>
+        <div class="emoji-subcategory" style="display: none;">❤️</div>
       </div>
+      
       <div class="emoji-grid">
         <!-- Emojis will be populated here -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- User Settings Panel -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <h2>User Settings</h2>
+      <button class="close-settings" id="close-settings">✕</button>
+    </div>
+    <div class="settings-content-container" id="settings-content-container">
+      <div class="settings-sidebar" id="settings-sidebar">
+        <!-- USER SETTINGS -->
+        <div class="settings-group-header">USER SETTINGS</div>
+        <div class="settings-category" data-category="my-account">My Account</div>
+        <div class="settings-category" data-category="profiles">Profiles</div>
+        <div class="settings-category" data-category="content-social">Content & Social</div>
+        <div class="settings-category" data-category="data-privacy">Data & Privacy</div>
+        <div class="settings-category" data-category="authorized-apps">Authorized Apps</div>
+        <div class="settings-category" data-category="devices">Devices</div>
+        <div class="settings-category" data-category="connections">Connections</div>
+        <div class="settings-category" data-category="clips">Clips</div>
+        
+        <!-- PAYMENT SETTINGS -->
+        <div class="settings-divider"></div>
+        <div class="settings-group-header">PAYMENT SETTINGS</div>
+        <div class="settings-category" data-category="premium">Premium <span class="badge">NEW</span></div>
+        <div class="settings-category" data-category="den-boosts">Den Boosts</div>
+        <div class="settings-category" data-category="subscriptions">Subscriptions</div>
+        <div class="settings-category" data-category="gift-inventory">Gift Inventory <span class="notification-badge"></span></div>
+        <div class="settings-category" data-category="billing">Billing</div>
+        
+        <!-- APP SETTINGS -->
+        <div class="settings-divider"></div>
+        <div class="settings-group-header">APP SETTINGS</div>
+        <div class="settings-category" data-category="appearance">Appearance</div>
+        <div class="settings-category" data-category="accessibility">Accessibility</div>
+        <div class="settings-category" data-category="voice-video">Voice & Video</div>
+        <div class="settings-category" data-category="chat">Chat</div>
+        <div class="settings-category" data-category="notifications">Notifications</div>
+        <div class="settings-category" data-category="keybinds">Keybinds</div>
+        <div class="settings-category" data-category="language">Language</div>
+        <div class="settings-category" data-category="windows">Windows Settings</div>
+        <div class="settings-category" data-category="streamer">Streamer Mode</div>
+        <div class="settings-category" data-category="advanced">Advanced</div>
+        
+        <!-- ACTIVITY SETTINGS -->
+        <div class="settings-divider"></div>
+        <div class="settings-group-header">ACTIVITY SETTINGS</div>
+        <div class="settings-category" data-category="activity-privacy">Activity Status</div>
+        <div class="settings-category" data-category="registered-apps">Registered Apps</div>
+        <div class="settings-category" data-category="overlay">App Overlay</div>
+        
+        <!-- OTHER -->
+        <div class="settings-divider"></div>
+        <div class="settings-category" data-category="whats-new">What's New</div>
+        <div class="settings-category" data-category="merch">Merch Store</div>
+        <div class="settings-category" data-category="foxpack">FoxPack</div>
+        
+        <div class="settings-divider"></div>
+        <div class="settings-category danger" data-category="logout">Log Out</div>
+      </div>
+      <div class="settings-content" id="settings-content">
+        <!-- Content will be loaded dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Den Settings Panel -->
+  <div class="den-settings-panel" id="den-settings-panel">
+    <div class="settings-header">
+      <h2>Den Settings</h2>
+      <button class="close-settings" id="close-den-settings">✕</button>
+    </div>
+    <div class="den-settings-content-container" id="den-settings-content-container">
+      <div class="settings-sidebar" id="den-settings-sidebar">
+        <div class="settings-category active" data-category="overview">Overview</div>
+        <div class="settings-category" data-category="roles">Roles</div>
+        <div class="settings-category" data-category="emoji">Emoji</div>
+        <div class="settings-category" data-category="invitation-codes">Invitation Codes</div>
+        <div class="settings-category" data-category="moderation">Moderation</div>
+        <div class="settings-category" data-category="members">Members</div>
+      </div>
+      <div class="settings-content" id="den-settings-content">
+        <!-- Content will be loaded dynamically -->
       </div>
     </div>
   </div>
@@ -370,6 +378,7 @@
   <!-- Include main scripts -->
   <script src="js/utils.js"></script>
   <script src="js/state.js"></script>
+  <script src="js/components/den-settings.js"></script>
   <script src="js/components/den.js"></script>
   <script src="js/components/channel.js"></script>
   <script src="js/components/chat.js"></script>

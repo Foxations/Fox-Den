@@ -1,0 +1,156 @@
+/* Voice Chat Context Menu */
+.voice-context-menu {
+  position: absolute;
+  min-width: 200px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 8px 0;
+  z-index: 1000;
+  font-size: 14px;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  opacity: 0;
+  animation: fadeIn 0.1s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.context-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+
+.context-menu-section {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.context-menu-volume {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-volume-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  outline: none;
+}
+
+.context-menu-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--theme-accent);
+  cursor: pointer;
+}
+
+.context-menu-volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--theme-accent);
+  cursor: pointer;
+  border: none;
+}
+
+/* Voice Chat Video Container */
+.voice-chat-video-container {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.voice-chat-user-info {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.theme-light .voice-chat-user-info {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.voice-chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+}
+
+.voice-chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.voice-chat-username {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.voice-chat-status {
+  display: flex;
+  gap: 6px;
+}
+
+.voice-chat-video {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+  background-color: var(--bg-primary);
+  object-fit: cover;
+}
+
+.voice-chat-muted-icon, 
+.voice-chat-deafened-icon {
+  color: var(--danger);
+}
+
+/* Avatar with initials */
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: var(--text-primary);
+  font-size: 20px;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-hover);
+}

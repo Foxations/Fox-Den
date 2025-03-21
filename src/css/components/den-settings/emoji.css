@@ -1,0 +1,173 @@
+/* Den Settings - Emoji Tab */
+
+/* Emoji section */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.emoji-item {
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.emoji-display {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.emoji-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.delete-emoji {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-short) var(--ease-out);
+}
+
+.emoji-item:hover .delete-emoji {
+  opacity: 1;
+}
+
+.add-emoji-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color var(--transition-short) var(--ease-out);
+}
+
+.add-emoji-button:hover {
+  background-color: var(--bg-hover);
+}
+
+.add-emoji-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.add-emoji-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Emoji upload modal */
+.emoji-upload-modal {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.emoji-upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.emoji-upload-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.emoji-upload-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.emoji-form-group {
+  margin-bottom: 16px;
+}
+
+.emoji-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.emoji-name-input {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.emoji-upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: background-color var(--transition-short) var(--ease-out);
+}
+
+.emoji-upload-area:hover {
+  background-color: var(--bg-secondary);
+}
+
+.emoji-upload-instruction {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.emoji-preview {
+  width: 64px;
+  height: 64px;
+  margin: 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-preview img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.emoji-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+} 

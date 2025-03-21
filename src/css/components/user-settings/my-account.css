@@ -1,0 +1,534 @@
+.account-section {
+  width: 100%;
+}
+
+/* Account Tabs */
+.account-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.account-tab {
+  padding: 10px 16px;
+  margin-right: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  position: relative;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.account-tab.active {
+  color: var(--text-primary);
+}
+
+.account-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--text-accent);
+}
+
+.account-tab-content {
+  width: 100%;
+}
+
+.account-tab-content.hidden {
+  display: none;
+}
+
+/* Banner and Avatar */
+.account-banner {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 60px;
+  background-color: var(--bg-secondary);
+}
+
+.user-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-avatar-container {
+  position: absolute;
+  bottom: -30px;
+  left: 16px;
+}
+
+.account-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: var(--text-primary);
+  border: 6px solid var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.avatar-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-user-profile-btn {
+  position: absolute;
+  right: 16px;
+  bottom: -36px;
+  background-color: var(--bg-accent);
+  color: var(--text-on-accent);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+/* User Fields */
+.user-info-fields {
+  margin-bottom: 24px;
+}
+
+.user-field {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  position: relative;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  width: 130px;
+}
+
+.field-value {
+  flex: 1;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.field-edit-btn, 
+.field-reveal-btn, 
+.field-remove-btn,
+.inline-reveal-btn {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  font-size: 14px;
+  margin-left: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.field-remove-btn {
+  color: var(--text-danger);
+}
+
+.inline-reveal-btn {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+/* Authentication Sections */
+.section-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 24px 0 16px;
+}
+
+.section-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.auth-status-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.auth-status {
+  display: flex;
+  align-items: center;
+}
+
+.auth-status.enabled {
+  color: var(--color-success);
+}
+
+.auth-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.auth-text {
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Specific adjustments for authenticator buttons */
+.auth-buttons .settings-button,
+.account-removal-buttons .settings-button {
+  min-width: 160px;
+  padding: 10px 16px;
+}
+
+/* View/Remove buttons in authentication sections */
+.settings-panel button[class*="Remove"],
+.settings-panel button[class*="View"] {
+  min-width: 140px;
+  padding: 8px 12px;
+  margin: 4px;
+  text-align: center;
+}
+
+/* Account Standing */
+.account-standing {
+  display: flex;
+  margin-bottom: 24px;
+  padding: 20px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  align-items: flex-start;
+}
+
+.user-avatar-large {
+  width: 80px;
+  height: 80px;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.avatar-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: var(--text-primary);
+}
+
+.standing-status h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.standing-good {
+  color: var(--color-success);
+}
+
+.standing-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.text-link {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+/* Standing Progress */
+.standing-progress {
+  position: relative;
+  display: flex;
+  height: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.standing-progress:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;  /* Width for "All good" position */
+  background-color: var(--color-success);
+  border-radius: 4px;
+}
+
+.standing-progress-marker {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background-color: var(--bg-tertiary);
+  border: 4px solid var(--bg-tertiary);
+  border-radius: 50%;
+  margin-top: -5px;
+  z-index: 2;
+  transform: translateX(-50%);
+}
+
+.standing-progress-marker.active {
+  background-color: var(--color-success);
+}
+
+.standing-marker-icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.standing-progress-marker[data-level="all-good"] {
+  left: 0%;
+}
+
+.standing-progress-marker[data-level="limited"] {
+  left: 25%;
+}
+
+.standing-progress-marker[data-level="very-limited"] {
+  left: 50%;
+}
+
+.standing-progress-marker[data-level="at-risk"] {
+  left: 75%;
+}
+
+.standing-progress-marker[data-level="suspended"] {
+  left: 100%;
+}
+
+.standing-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+}
+
+.standing-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 20%;
+  position: relative;
+}
+
+.standing-label:nth-child(1) {
+  text-align: left;
+}
+
+.standing-label:nth-child(2) {
+  text-align: center;
+  left: -5%;
+}
+
+.standing-label:nth-child(3) {
+  text-align: center;
+}
+
+.standing-label:nth-child(4) {
+  text-align: center;
+  left: 5%;
+}
+
+.standing-label:nth-child(5) {
+  text-align: right;
+}
+
+.standing-label.active {
+  color: var(--color-success);
+  font-weight: bold;
+}
+
+.standing-indicator {
+  padding: 20px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+/* Account status description */
+.account-status-description {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #b9bbbe;
+  line-height: 1.5;
+}
+
+.account-status-description a {
+  color: #00aff4;
+  text-decoration: none;
+}
+
+.account-status-description a:hover {
+  text-decoration: underline;
+}
+
+/* Account status heading */
+.account-status-heading {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.account-status-heading h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.account-status-indicator {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #43b581;
+}
+
+/* Account removal buttons */
+.account-removal-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.banner-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, var(--bg-secondary), var(--bg-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+/* Account settings-specific buttons */
+.account-tab-content .settings-button {
+  min-width: 200px;
+  white-space: normal;
+  text-align: center;
+  height: auto;
+  padding: 10px 16px;
+}
+
+/* Authenticator and SMS sections specific fixes */
+h4 + .section-description + .settings-button,
+h4 + p.section-description + button[class*="Remove"] {
+  min-width: 220px;
+  margin-top: 8px;
+  padding: 10px 16px;
+}
+
+/* Register security key button */
+h4 + .section-description + button:not([class*="Remove"]) {
+  min-width: 180px;
+}
+
+/* Authentication-specific button adjustments */
+button.settings-button.danger,
+.account-tab-content button.settings-button {
+  min-width: 240px;
+  white-space: nowrap;
+  padding: 10px 16px;
+  font-size: var(--font-size-sm);
+}
+
+/* Backup codes and authentication buttons */
+.auth-buttons .settings-button,
+.section-description + .settings-button,
+h4 + p + .settings-button {
+  min-width: 220px;
+  white-space: nowrap;
+  padding: 10px 16px;
+}
+
+/* Security buttons need more space */
+.account-tab-content h4 + .section-description + .settings-button {
+  min-width: 250px !important;
+}
+
+/* Account removal buttons */
+.account-removal-buttons .settings-button {
+  min-width: 170px;
+}
+
+/* Button styling for specific authentication buttons */
+.remove-auth-btn {
+  min-width: 220px !important;
+  white-space: nowrap;
+}
+
+.remove-sms-btn {
+  min-width: 240px !important;
+  white-space: nowrap;
+}
+
+.register-key-btn {
+  min-width: 200px !important;
+  white-space: nowrap;
+}
+
+.view-backup-btn {
+  min-width: 170px !important;
+  white-space: nowrap;
+}
+
+/* Make sure all auth buttons have consistent height */
+.settings-button.danger,
+.remove-auth-btn,
+.remove-sms-btn,
+.register-key-btn,
+.view-backup-btn {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.disable-account-btn,
+.delete-account-btn {
+  min-width: 160px !important;
+  white-space: nowrap;
+} 

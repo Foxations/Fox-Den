@@ -26,8 +26,8 @@
   justify-content: space-between;
   border-bottom: 1px solid var(--border-color);
   border-top: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
-  font-weight: var(--font-weight-bold);
+  /* border-right: 1px solid v--border-color); */
+  font-weight: var(--foneight-bold);
 }
 
 .chat-header-controls {
@@ -51,8 +51,9 @@
 
 .chat-area {
   flex: 1;
-  padding: var(--spacing-md);
   overflow-y: auto;
+  background-color: rgba(var(--bg-primary-rgb, 18, 18, 18), 0.95);
+  padding: var(--spacing-md);
   position: relative;
 }
 
@@ -176,6 +177,7 @@
 .message-content {
   flex: 1;
   min-width: 0; /* Allow text to wrap */
+  padding-left: 5px;
 }
 
 .message-header {
@@ -275,7 +277,7 @@
 
 .file-actions {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: var (--spacing-xs);
 }
 
 .file-action {
@@ -295,24 +297,34 @@
   color: var(--text-primary);
 }
 
-.chat-input-area {
+/* .chat-input-area {
   padding: 0 var(--spacing-md) var(--spacing-md);
-}
+} */
 
 .chat-input-container {
-  background-color: var(--bg-input);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   align-items: center;
+  padding: var(--spacing-xs);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .attachment-button,
 .emoji-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
-  margin-right: var(--spacing-sm);
   cursor: pointer;
-  transition: color var(--transition-short) var (--ease-out);
+  transition: background-color var(--transition-short) var(--ease-out),
+              color var(--transition-short) var(--ease-out);
 }
 
 .attachment-button:hover,
@@ -323,22 +335,40 @@
 .emoji-button {
   margin-left: var(--spacing-sm);
   margin-right: 0;
+  padding-right: 6px;
 }
 
+/* Style for the contenteditable message input */
 .chat-input {
-  background-color: transparent;
-  border-radius: 0;
-  padding: 0;
-  color: var(--text-primary);
+  flex: 1;
+  height: auto;
+  min-height: 22px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  background-color: var(--bg-input);
   border: none;
-  width: 100%;
-  resize: none;
-  height: 22px;
-  max-height: 150px;
-  outline: none;
-  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
+  line-height: 1.4;
+  outline: none;
+  word-wrap: break-word;
+  -webkit-user-modify: read-write-plaintext-only;
+  cursor: text;
+}
+
+/* Add placeholder with pseudo element */
+.chat-input.empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Focus state */
+.chat-input:focus {
+  background-color: var(--bg-input-hover);
+  box-shadow: 0 0 0 1px var(--border-color);
 }
 
 .chat-input:focus {
@@ -470,10 +500,122 @@
   box-shadow: var(--shadow-md);
   min-width: 180px;
   z-index: var(--z-index-dropdown);
-  animation: context-menu 0.2s var(--ease-out);
+  animation: context-menu-open 0.2s var(--ease-out);
+  border: 1px solid var(--border-color);
 }
 
-@keyframes context-menu {
+.context-menu.closing {
+  animation: context-menu-close 0.2s var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+/* Specific positioning for user profile context menu */
+.context-menu.user-profile-menu {
+  left: 78px !important;
+  top: calc(100% - 260px) !important;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+
+/* Status submenu styling */
+.context-menu-item.status-item {
+  position: relative;
+}
+
+.status-submenu {
+  position: absolute;
+  left: 100%;
+  top: -1px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 220px;
+  z-index: var(--z-index-dropdown);
+  display: none;
+  animation: context-menu-open 0.2s var(--ease-out);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.context-menu-item.status-item:hover .status-submenu {
+  display: block;
+}
+
+.status-submenu-item {
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  position: relative;
+  border-bottom: 1px solid var(--border-color);
+  line-height: 1.3;
+}
+
+.status-submenu-item:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.status-submenu-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.status-submenu-item:hover {
+  background-color: var(--bg-hover);
+  border-radius: inherit;
+}
+
+.status-submenu-item.active {
+  background-color: var(--bg-active, rgba(0, 0, 0, 0.05));
+  border-radius: inherit;
+}
+
+.status-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.status-title::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-submenu-item[data-status="online"] .status-title::before {
+  background-color: var(--status-online);
+}
+
+.status-submenu-item[data-status="idle"] .status-title::before {
+  background-color: var(--status-away);
+}
+
+.status-submenu-item[data-status="dnd"] .status-title::before {
+  background-color: var(--status-dnd);
+}
+
+.status-submenu-item[data-status="offline"] .status-title::before {
+  background-color: var(--status-offline);
+}
+
+.status-description {
+  margin-top: 4px;
+  padding-left: 18px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.9;
+  max-width: 190px;
+  line-height: 1.3;
+}
+
+@keyframes context-menu-open {
   from {
     opacity: 0;
     transform: scale(0.95);
@@ -481,6 +623,17 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes context-menu-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
   }
 }
 
@@ -493,14 +646,21 @@
   font-size: var(--font-size-sm);
 }
 
-.context-menu-item:hover {
-  background-color: var(--bg-hover);
+.context-menu-item:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
-.context-menu-divider {
-  height: 1px;
-  background-color: var(--border-color);
-  margin: var(--spacing-xs) 0;
+.context-menu-item:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.context-menu-item:only-child {
+  border-radius: var(--radius-md);
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+  border-radius: inherit;
 }
 
 .context-menu-item.danger {
@@ -508,7 +668,14 @@
 }
 
 .context-menu-item.danger:hover {
-  background-color: var(--danger-bg);
+  background-color: var(--danger);
+  color: white;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--spacing-xs) 0;
 }
 
 /* Emoji reactions */
@@ -626,33 +793,62 @@
   display: block;
 }
 
+/* Emoji categories */
 .emoji-categories {
   display: flex;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
+  padding: 8px;
   margin-bottom: 4px;
-  justify-content: cleft; /* Center the categories */
-  gap: 0px; /* Small gap between category tabs */
+  /* gap: 8px; */
+  transition: all 0.3s ease;
 }
 
-.emoji-category-tab {
-  padding: 4px; /* Reduced padding */
+.emoji-category,
+.emoji-subcategory {
+  padding: 6px;
   cursor: pointer;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px; /* Ensure consistent width */
-  height: 28px; /* Square shape */
+  min-width: 28px;
+  height: 28px;
   transition: background-color var(--transition-short) var(--ease-out);
 }
 
-.emoji-category-tab:hover {
+.emoji-category:hover,
+.emoji-subcategory:hover {
   background-color: var(--bg-hover);
 }
 
-.emoji-category-tab.active {
+.emoji-category.active,
+.emoji-subcategory.active {
   background-color: var(--bg-active);
+}
+
+.emoji-category.parent-category {
+  position: relative;
+}
+
+.emoji-category.parent-category .fox-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.emoji-category.parent-category::after {
+  /* content: "Default Emojis"; */
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  white-space: nowrap;
+  display: block;
+}
+
+.emoji-categories.expanded .emoji-category.parent-category::after {
+  display: none;
 }
 
 .emoji-grid {
@@ -662,23 +858,50 @@
   max-height: 200px;
   overflow-y: auto;
   padding: 4px;
-  justify-items: center; /* Align items from left */
-  align-content: baseline; /* Align grid from top */
+  justify-items: center;
+  align-content: baseline;
 }
 
-.emoji {
-  font-size: 1.5rem;
-  line-height: 1;
-  width: 32px; /* Force square size */
-  height: 32px; /* Force square size */
+.emoji-placeholder {
+  grid-column: 1 / -1;
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+/* Remove emoji sources section */
+.emoji-sources {
+  display: none;
+}
+
+/* Default emoji categories - Remove redundant styles */
+#default-emoji-categories {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Default emoji categories */
+#default-emoji-categories {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: background-color var(--transition-short) var(--ease-out);
+  padding: 8px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.emoji:hover {
-  background-color: var(--bg-hover);
+.message-reply-bar {
+  width: 2px;
+  height: 14px;
+  background-color: var(--theme-accent);
+  margin-right: var(--spacing-xs);
+}
+
+.message-reactions .reaction:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: var(--theme-accent);
+}
+
+.message-reactions .reaction.selected {
+  background-color: rgba(255, 117, 24, 0.1);
+  border-color: var(--theme-accent);
 }

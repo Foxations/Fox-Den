@@ -1,0 +1,251 @@
+/* Den Settings - Moderation Tab */
+
+/* Moderation options */
+.moderation-options {
+  margin-top: 16px;
+}
+
+.moderation-option {
+  background-color: var(--bg-secondary);
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.moderation-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.option-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.option-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+/* Moderation levels */
+.moderation-level-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.moderation-level {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.moderation-level-radio {
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.moderation-level-info {
+  flex: 1;
+}
+
+.moderation-level-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.moderation-level-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Filter settings */
+.filter-settings {
+  margin-top: 20px;
+}
+
+.filter-list {
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.filter-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-list-title {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.add-filter-btn {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.add-filter-btn:hover {
+  text-decoration: underline;
+}
+
+.filter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.filter-word {
+  font-family: monospace;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-filter,
+.delete-filter {
+  background: none;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.edit-filter {
+  color: var(--text-accent);
+}
+
+.delete-filter {
+  color: var(--color-danger);
+}
+
+/* Filter input modal */
+.filter-modal {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.filter-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.filter-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.filter-form-group {
+  margin-bottom: 16px;
+}
+
+.filter-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.filter-actions-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+/* Verification level */
+.verification-level {
+  margin-top: 24px;
+}
+
+.verification-slider {
+  width: 100%;
+  height: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  margin: 32px 0 24px;
+  position: relative;
+}
+
+.verification-marker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: background-color var(--transition-short) var(--ease-out);
+}
+
+.verification-marker:hover,
+.verification-marker.active {
+  background-color: var(--text-accent);
+  border-color: var(--text-accent);
+}
+
+.verification-level-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.verification-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 100px;
+}
+
+.verification-label.active {
+  color: var(--text-primary);
+  font-weight: bold;
+} 

@@ -18,10 +18,15 @@ const App = {
       this._showLoading();
       
       try {
+        // Create theme transition container
+        const rippleContainer = document.createElement('div');
+        rippleContainer.className = 'theme-transition-container';
+        document.body.appendChild(rippleContainer);
+        
         // Initialize app state first
         await AppState.init();
         
-        // Set up basic event listeners
+        // Set up general UI event listeners
         this._setupEventListeners();
         
         // Initialize all managers with individual error handling
@@ -71,6 +76,18 @@ const App = {
         } catch (error) {
           console.error("Error initializing SettingsManager:", error);
           throw new Error("SettingsManager initialization failed: " + error.message);
+        }
+        
+        // Add a verification step to make sure the settings button works
+        this._verifyUIEventHandlers();
+        
+        // Update logo based on theme
+        this._updateLogoBasedOnTheme();
+        
+        // Load active den
+        const activeDenId = AppState.get('activeDen');
+        if (activeDenId) {
+          AppState.setActiveDen(activeDenId);
         }
         
         // No longer need to dynamically load screen-selector.js
@@ -276,13 +293,36 @@ const App = {
     },
     
     /**
-     * Set up basic event listeners
+     * Set up general UI event listeners
      * @private
      */
     _setupEventListeners: function() {
-      // Theme toggle button
-      document.getElementById('toggle-theme').addEventListener('click', () => {
-        AppState.toggleTheme();
+      // We removed the theme toggle button, so we only need the theme change event listener
+      // Listen for theme change custom event
+      document.addEventListener('themeChanged', (e) => {
+        console.log('Theme changed event received, updating logos');
+        // Update logos after theme has been changed
+        this._updateLogoBasedOnTheme();
+        
+        // Ensure settings panels are updated with the new theme
+        if (document.querySelector('.settings-panel.active, .den-settings-panel.active')) {
+          setTimeout(() => {
+            document.querySelectorAll('.settings-panel, .den-settings-panel').forEach(panel => {
+              // Force a reflow to update theme variables in settings panels
+              panel.style.transition = 'none';
+              void panel.offsetWidth; // Trigger reflow
+              panel.style.transition = '';
+            });
+          }, 300); // Wait for theme transition to complete
+        }
+      });
+      
+      // Home button
+      const homeButton = document.getElementById('home-button');
+      homeButton.addEventListener('click', () => {
+        // Show home view
+        AppState.set('activeDen', 'foxden-central');
+        AppState.setActiveDen('foxden-central');
       });
       
       // Handle clicks on the backdrop elements to close modals
@@ -603,6 +643,99 @@ const App = {
           reject(error);
         });
       });
+    },
+
+    /**
+     * Update logo based on current theme
+     */
+    _updateLogoBasedOnTheme: function() {
+      // Get current theme from AppState for more reliable theme detection
+      const currentTheme = AppState.get('currentTheme') || (document.body.classList.contains('theme-light') ? 'light' : 'dark');
+      const logoElement = document.querySelector('#home-button img');
+      const emojiButton = document.querySelector('#emoji-button img');
+      
+      console.log(`Updating logos for theme: ${currentTheme}`);
+      
+      if (logoElement) {
+        // Add animation class
+        logoElement.classList.add('pop-animation');
+        
+        // Update after a slight delay for smoother animation
+        setTimeout(() => {
+          // Update source based on theme
+          if (currentTheme === 'light') {
+            // Light mode uses FENNEC
+            console.log('Setting home logo to FENNEC');
+            logoElement.src = 'assets/icons/png/FENNEC_64x64.png';
+          } else {
+            // Dark mode uses FOX
+            console.log('Setting home logo to FOX');
+            logoElement.src = 'assets/icons/png/FOX_64x64.png';
+          }
+          
+          // Remove animation class after animation completes
+          setTimeout(() => {
+            logoElement.classList.remove('pop-animation');
+          }, 300); // Animation duration is 0.3s
+        }, 50);
+      } else {
+        console.warn('Home logo element not found');
+      }
+      
+      if (emojiButton) {
+        // Add animation class
+        emojiButton.classList.add('pop-animation');
+        
+        // Update after a slight delay for smoother animation
+        setTimeout(() => {
+          // Update source based on theme
+          if (currentTheme === 'light') {
+            // Light mode uses FENNEC
+            console.log('Setting emoji button to FENNEC');
+            emojiButton.src = 'assets/icons/png/FENNEC_32x32.png';
+          } else {
+            // Dark mode uses FOX
+            console.log('Setting emoji button to FOX');
+            emojiButton.src = 'assets/icons/png/FOX_32x32.png';
+          }
+          
+          // Remove animation class after animation completes
+          setTimeout(() => {
+            emojiButton.classList.remove('pop-animation');
+          }, 300); // Animation duration is 0.3s
+        }, 50);
+      } else {
+        console.warn('Emoji button element not found');
+      }
+    },
+
+    /**
+     * Verify UI event handlers
+     * @private
+     */
+    _verifyUIEventHandlers: function() {
+      // Ensure settings button works
+      const settingsButton = document.getElementById('open-settings');
+      if (settingsButton) {
+        console.log('Verifying settings button handler');
+        settingsButton.addEventListener('click', () => {
+          console.log('Settings button clicked');
+          if (typeof SettingsManager !== 'undefined') {
+            console.log('SettingsManager found, showing settings');
+            // Ensure the manager is initialized before showing settings
+            if (!SettingsManager.initialized) {
+              SettingsManager.init();
+            }
+            SettingsManager.showSettings();
+          } else {
+            console.error('SettingsManager is not defined');
+          }
+        });
+      } else {
+        console.error('Settings button not found');
+      }
+      
+      // No longer need to verify theme toggle since it's handled in _setupEventListeners
     }
   };
   

@@ -1,0 +1,146 @@
+/* User settings button */
+.settings-button, .icon-button.settings-button,
+.mic-button, .icon-button.mic-button,
+.headset-button, .icon-button.headset-button {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 4px !important;
+  color: var(--text-primary) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  background-color: var(--bg-hover) !important;
+}
+
+.settings-button svg, 
+.icon-button.settings-button svg,
+.mic-button svg,
+.icon-button.mic-button svg,
+.headset-button svg,
+.icon-button.headset-button svg,
+#user-settings svg,
+#toggle-mic svg,
+#toggle-headset svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: var(--text-primary) !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+}
+
+.settings-button:hover, .icon-button.settings-button:hover,
+.mic-button:hover, .icon-button.mic-button:hover,
+.headset-button:hover, .icon-button.headset-button:hover {
+  background-color: var(--theme-accent) !important;
+}
+
+/* Mic and headset muted states */
+.mic-button.muted, .icon-button.mic-button.muted,
+.headset-button.muted, .icon-button.headset-button.muted {
+  background-color: var(--status-dnd) !important;
+  color: white !important;
+}
+
+.mic-button.muted svg, .icon-button.mic-button.muted svg,
+.headset-button.muted svg, .icon-button.headset-button.muted svg {
+  color: white !important;
+}
+
+/* User info section with avatar and details */
+.user-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.user-details {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.username {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  line-height: 1.2 !important;
+}
+
+.status-text {
+  font-size: 12px !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.2 !important;
+}
+
+/* User avatar styling */
+.user-avatar, #user-profile {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important; /* Make avatar circular like Discord */
+  background-color: var(--theme-accent) !important; /* More colorful background */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  cursor: pointer !important;
+  font-weight: var(--font-weight-bold) !important;
+  color: white !important; /* White text for better contrast */
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.user-avatar:hover, #user-profile:hover {
+  opacity: 0.8 !important;
+}
+
+#user-initials {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.user-status {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  position: absolute !important;
+  bottom: -2px !important;
+  right: -2px !important;
+  border: 2px solid var(--bg-primary) !important;
+}
+
+/* Status colors */
+.online {
+  background-color: var(--status-online) !important;
+}
+
+.idle, .away {
+  background-color: var(--status-away) !important;
+}
+
+.dnd {
+  background-color: var(--status-dnd) !important;
+}
+
+.offline, .invisible {
+  background-color: var(--status-offline) !important;
+}
+
+/* Generic icon button class */
+.icon-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+} 

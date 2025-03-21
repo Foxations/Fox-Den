@@ -235,19 +235,44 @@ const Utils = {
     },
     
     /**
+     * Close a context menu with animation
+     * @param {HTMLElement} menu - The menu element to close
+     */
+    closeContextMenu: function(menu) {
+      if (!menu) return;
+      
+      // Add the closing class to trigger animation
+      menu.classList.add('closing');
+      
+      // Wait for animation to finish before removing
+      setTimeout(() => {
+        menu.remove();
+      }, 200); // Same duration as the animation
+    },
+    
+    /**
      * Create a context menu at the specified position
      * @param {Array} items - Menu items
      * @param {number} x - X position
      * @param {number} y - Y position
+     * @param {string} [className] - Optional additional class name
      */
-    showContextMenu: function(items, x, y) {
-      // Remove any existing context menus
+    showContextMenu: function(items, x, y, className = '') {
+      // Remove any existing context menus with animation
       const existingMenu = document.querySelector('.context-menu');
-      if (existingMenu) existingMenu.remove();
+      if (existingMenu) {
+        this.closeContextMenu(existingMenu);
+        return; // Don't show new menu if we're closing one
+      }
       
       // Create the menu
       const menu = document.createElement('div');
       menu.className = 'context-menu';
+      
+      // Add the optional class name if provided
+      if (className) {
+        menu.classList.add(className);
+      }
       
       // Add items
       for (const item of items) {
@@ -257,7 +282,17 @@ const Utils = {
           menu.appendChild(divider);
         } else {
           const menuItem = document.createElement('div');
-          menuItem.className = `context-menu-item ${item.danger ? 'danger' : ''}`;
+          let baseClassName = 'context-menu-item';
+          
+          if (item.danger) {
+            baseClassName += ' danger';
+          }
+          
+          if (item.customClass) {
+            baseClassName += ` ${item.customClass}`;
+          }
+          
+          menuItem.className = baseClassName;
           
           let icon = '';
           if (item.icon) {
@@ -266,11 +301,20 @@ const Utils = {
           
           menuItem.innerHTML = `${icon}${item.label}`;
           
+          // Add custom HTML if provided
+          if (item.customHTML) {
+            menuItem.innerHTML += item.customHTML;
+          }
+          
           if (item.onClick) {
             menuItem.addEventListener('click', (e) => {
               e.stopPropagation();
-              item.onClick();
-              menu.remove();
+              // Close menu with animation
+              this.closeContextMenu(menu);
+              // Call onClick handler after a delay to allow animation to start
+              setTimeout(() => {
+                item.onClick();
+              }, 50);
             });
           }
           
@@ -281,38 +325,38 @@ const Utils = {
       // Add to document
       document.body.appendChild(menu);
       
-      // Position the menu
-      const menuWidth = menu.offsetWidth;
-      const menuHeight = menu.offsetHeight;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      
-      // Adjust position if menu would go off screen
-      if (x + menuWidth > windowWidth) {
-        x = windowWidth - menuWidth;
-      }
-      
-      if (y + menuHeight > windowHeight) {
-        y = windowHeight - menuHeight;
-      }
-      
-      menu.style.left = x + 'px';
-      menu.style.top = y + 'px';
-      
-      // Close menu when clicking outside
-      const closeMenu = (e) => {
-        if (!menu.contains(e.target)) {
-          menu.remove();
-          document.removeEventListener('click', closeMenu);
+      // Only adjust position if no custom class is provided
+      if (!className) {
+        // Position the menu
+        const menuWidth = menu.offsetWidth;
+        const menuHeight = menu.offsetHeight;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        // Adjust position if menu would go off screen
+        if (x + menuWidth > windowWidth) {
+          x = windowWidth - menuWidth;
         }
-      };
+        
+        if (y + menuHeight > windowHeight) {
+          y = windowHeight - menuHeight;
+        }
+        
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+      }
       
-      // Wait a tick before adding the event listener to prevent immediate closing
+      // Add click handler to close the menu when clicking outside
       setTimeout(() => {
-        document.addEventListener('click', closeMenu);
+        const clickHandler = function(e) {
+          if (!menu.contains(e.target)) {
+            // Use the animated close instead of direct removal
+            Utils.closeContextMenu(menu);
+            document.removeEventListener('click', clickHandler);
+          }
+        };
+        document.addEventListener('click', clickHandler);
       }, 0);
-      
-      return menu;
     },
     
     /**
@@ -347,6 +391,98 @@ const Utils = {
       ];
       
       return colors[Math.floor(Math.random() * colors.length)];
+    },
+    
+    /**
+     * Show a modal dialog
+     * @param {Object} options - Modal options
+     * @param {string} options.title - The modal title
+     * @param {string} options.content - The HTML content of the modal
+     * @param {Array} [options.buttons] - The buttons to show
+     * @param {Function} [options.onOpen] - Called when the modal is opened
+     * @param {Function} [options.onConfirm] - Called when the modal is confirmed
+     * @param {Function} [options.onCancel] - Called when the modal is cancelled
+     * @returns {HTMLElement} The modal element
+     */
+    showModal: function(options) {
+      const {
+        title, 
+        content, 
+        buttons = [
+          { text: 'Cancel', type: 'secondary' },
+          { text: 'OK', type: 'primary' }
+        ],
+        onOpen,
+        onConfirm,
+        onCancel
+      } = options;
+      
+      // Create modal container
+      const modal = document.createElement('div');
+      modal.className = 'modal active';
+      modal.id = `modal-${this.generateId()}`;
+      
+      // Create modal HTML
+      modal.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>${title}</h3>
+            <button class="modal-close">✕</button>
+          </div>
+          <div class="modal-content">
+            ${content}
+          </div>
+          <div class="modal-actions">
+            ${buttons.map(button => `
+              <button class="modal-button ${button.type}" id="${button.type === 'primary' ? 'confirm-modal' : 'cancel-modal'}">${button.text}</button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      
+      // Add to document
+      document.body.appendChild(modal);
+      
+      // Set up event listeners
+      const closeModal = () => {
+        modal.classList.remove('active');
+        setTimeout(() => {
+          modal.remove();
+        }, 300);
+      };
+      
+      // Add close functionality
+      modal.querySelector('.modal-close').addEventListener('click', () => {
+        if (onCancel) onCancel(modal);
+        closeModal();
+      });
+      
+      // Add cancel button functionality
+      const cancelButton = modal.querySelector('#cancel-modal');
+      if (cancelButton) {
+        cancelButton.addEventListener('click', () => {
+          if (onCancel) onCancel(modal);
+          closeModal();
+        });
+      }
+      
+      // Add confirm button functionality
+      const confirmButton = modal.querySelector('#confirm-modal');
+      if (confirmButton) {
+        confirmButton.addEventListener('click', () => {
+          if (onConfirm) onConfirm(modal);
+          closeModal();
+        });
+      }
+      
+      // Add extra functionality to modal
+      modal.close = closeModal;
+      
+      // Call onOpen callback
+      if (onOpen) onOpen(modal);
+      
+      return modal;
     }
   };
   

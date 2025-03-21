@@ -4,7 +4,10 @@
  * Handles all functionality related to text messaging
  */
 
-const ChatManager = {
+// Ensure ChatManager is accessible everywhere as early as possible
+(function(global) {
+  // Create ChatManager in global scope right away
+  global.ChatManager = {
     // Track initialization state
     initialized: false,
     
@@ -19,17 +22,170 @@ const ChatManager = {
      * Initialize the chat manager
      */
     init: function() {
+      console.log("ChatManager init called");
       if (this.initialized) return;
       
       // Cache DOM elements
       this.messagesContainer = document.getElementById('messages-container');
-      this.messageInput = document.getElementById('message-input');
       this.textContainer = document.getElementById('text-container');
       this.uploadButton = document.getElementById('upload-button');
       this.emojiButton = document.getElementById('emoji-button');
-      this.emojiModal = document.getElementById('emoji-modal');
+      
+      // NEW: Directly create the emoji modal in the correct place, rather than finding it
+      // This ensures it doesn't exist anywhere else in the DOM
+      this._createEmojiModal();
+      
+      // Set up the input system - MAJOR CHANGE: Replace textarea with contenteditable div
+      this._setupChatInput();
       
       // Create typing indicator element with persistent animation dots
+      this._setupTypingIndicator();
+      
+      // Set up basic event listeners (ones that don't depend on emoji data)
+      this._setupBasicEventListeners();
+      
+      // Subscribe to state changes
+      AppState.subscribe('activeChannel', (channelId) => this._handleActiveChannelChange(channelId));
+      AppState.subscribe('messages', () => this.renderMessages());
+      
+      // Load emoji data first, then set up emoji-related event listeners
+      this._loadEmojiData()
+        .then(() => {
+          // After emojis are loaded, set up emoji-related event listeners
+          this._setupEmojiEventListeners();
+          // Populate the emoji grid with data
+          this._populateEmojiGrid();
+        })
+        .catch(error => {
+          console.error('Failed to load emoji data:', error);
+          Utils.showToast('Failed to load emoji data', 'error');
+        });
+      
+      this.initialized = true;
+    },
+
+    /**
+     * Create the emoji modal directly in the messages container
+     * @private
+     */
+    _createEmojiModal: function() {
+      // Remove any existing emoji modals from DOM
+      const existingModal = document.getElementById('emoji-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // Ensure messages container has proper positioning context
+      this.messagesContainer.style.position = 'relative';
+      this.messagesContainer.style.overflow = 'auto';
+      
+      // Create a new emoji modal
+      const emojiModal = document.createElement('div');
+      emojiModal.id = 'emoji-modal';
+      emojiModal.className = 'emoji-modal';
+      
+      // Set basic inline styles to ensure correct positioning at bottom right of messages container
+      emojiModal.style.position = 'absolute';
+      emojiModal.style.bottom = '10px'; // Small offset from bottom
+      emojiModal.style.right = '10px'; // Small offset from right
+      emojiModal.style.zIndex = '100';
+      emojiModal.style.maxHeight = '320px';
+      emojiModal.style.width = '345px'; // Updated width as requested
+      emojiModal.style.overflow = 'auto';
+      emojiModal.style.borderRadius = '8px';
+      emojiModal.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+      emojiModal.style.backgroundColor = '#2f3136';
+      emojiModal.style.border = '1px solid #202225';
+      emojiModal.style.display = 'none'; // Hidden by default
+      
+      // Create emoji modal structure
+      emojiModal.innerHTML = `
+        <div class="emoji-search-container" style="padding: 8px; border-bottom: 1px solid #40444b;">
+          <input type="text" class="emoji-search" placeholder="Search for emoji..." style="width: 100%; padding: 6px; border-radius: 4px; background: #40444b; border: none; color: #dcddde;">
+        </div>
+        <div class="emoji-categories-container" style="position: relative; overflow: hidden; border-bottom: 1px solid #40444b;">
+          <div class="emoji-categories" style="display: flex; flex-wrap: nowrap; padding: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; -ms-overflow-style: none;">
+            <div class="emoji-category parent-category" style="padding: 4px; cursor: pointer; margin: 0; flex-shrink: 0;">🦊</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">😀</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">🐶</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">🍕</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">🚗</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">⚽</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">💡</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">🏳️‍🌈</div>
+            <div class="emoji-subcategory" style="padding: 4px; cursor: pointer; margin: 0; display: none; flex-shrink: 0;">🔣</div>
+          </div>
+          <div class="emoji-categories-scroll-hint" style="position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: linear-gradient(to right, transparent, #2f3136); pointer-events: none; opacity: 0.8; display: none;"></div>
+        </div>
+        <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); padding: 8px; gap: 4px; max-height: 200px; overflow-y: auto;">
+          <div class="emoji-placeholder" style="grid-column: span 6; text-align: center; color: #dcddde; padding: 20px 0;">Select a category to see emojis</div>
+        </div>
+      `;
+      
+      // Add directly to the messages container
+      this.messagesContainer.appendChild(emojiModal);
+      
+      // Store reference
+      this.emojiModal = emojiModal;
+    },
+    
+    /**
+     * Set up the chat input system using contenteditable div (Discord-like)
+     * @private
+     */
+    _setupChatInput: function() {
+      // Find the chat input container
+      const inputContainer = this.textContainer.querySelector('.chat-input-container');
+      
+      // Check if we need to replace an existing textarea
+      const existingInput = document.getElementById('message-input');
+      if (existingInput) {
+        // Save the existing value if any
+        const existingValue = existingInput.value || '';
+        
+        // Remove the existing textarea
+        existingInput.remove();
+        
+        // Create a new contenteditable div
+        const chatInput = document.createElement('div');
+        chatInput.id = 'message-input';
+        chatInput.className = 'chat-input';
+        chatInput.contentEditable = true;
+        chatInput.role = 'textbox';
+        chatInput.spellcheck = true;
+        chatInput.setAttribute('data-placeholder', 'Message #general');
+        
+        // Add accessibility attributes
+        chatInput.setAttribute('aria-label', 'Message input');
+        chatInput.setAttribute('aria-multiline', 'true');
+        
+        // Insert at the correct position in the container
+        inputContainer.insertBefore(chatInput, inputContainer.querySelector('.emoji-button'));
+        
+        // Set any existing value
+        if (existingValue) {
+          chatInput.textContent = existingValue;
+        }
+      } else {
+        // The element doesn't exist yet, likely modifying the HTML directly
+        console.warn('Could not find existing message input - please update the HTML template');
+      }
+      
+      // Store reference to the input
+      this.messageInput = document.getElementById('message-input');
+      
+      // Set up debug events for input
+      this._setupDebugListeners();
+      
+      // Add core event listeners for the input
+      this._setupInputEventListeners();
+    },
+    
+    /**
+     * Set up the typing indicator
+     * @private
+     */
+    _setupTypingIndicator: function() {
       this.typingIndicator = document.createElement('div');
       this.typingIndicator.className = 'typing-indicator';
       this.typingIndicator.style.display = 'none'; // Hide initially
@@ -51,30 +207,61 @@ const ChatManager = {
       const chatInputArea = this.textContainer.querySelector('.chat-input-area');
       const chatInputContainer = this.textContainer.querySelector('.chat-input-container');
       chatInputArea.insertBefore(this.typingIndicator, chatInputContainer);
-      
-      // Set up event listeners
-      this._setupEventListeners();
-      
-      // Subscribe to state changes
-      AppState.subscribe('activeChannel', (channelId) => this._handleActiveChannelChange(channelId));
-      AppState.subscribe('messages', () => this.renderMessages());
-      
-      this.initialized = true;
     },
     
     /**
-     * Set up event listeners for chat-related elements
+     * Set up debug event listeners for input focus issues
      * @private
      */
-    _setupEventListeners: function() {
-      // Handle message input events
+    _setupDebugListeners: function() {
+      if (this.messageInput) {
+        this.messageInput.addEventListener('focus', (e) => {
+          console.log('[DEBUG] Input FOCUSED at:', new Date().toISOString());
+          console.log('[DEBUG] Input state:', {
+            isContentEditable: this.messageInput.isContentEditable,
+            textContent: this.messageInput.textContent,
+            innerHTML: this.messageInput.innerHTML,
+            active: document.activeElement === this.messageInput
+          });
+        });
+        
+        this.messageInput.addEventListener('blur', () => {
+          console.log('[DEBUG] Input BLURRED at:', new Date().toISOString());
+        });
+        
+        this.messageInput.addEventListener('keydown', (e) => {
+          console.log('[DEBUG] Keydown in input:', e.key, 'at:', new Date().toISOString());
+        });
+        
+        this.messageInput.addEventListener('input', (e) => {
+          console.log('[DEBUG] Input event fired. New value:', this.messageInput.textContent);
+        });
+      }
+      
+      // Monitor all focus changes in document
+      document.addEventListener('focusin', (e) => {
+        console.log('[DEBUG] Focus changed to:', e.target.tagName, 
+                    e.target.id ? `#${e.target.id}` : '',
+                    'at:', new Date().toISOString());
+      });
+    },
+    
+    /**
+     * Set up core event listeners for the input
+     * @private
+     */
+    _setupInputEventListeners: function() {
+      // Handle input enter key (send message)
       this.messageInput.addEventListener('keydown', (e) => {
         // Send message on Enter (without Shift)
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           this.sendMessage();
         }
-        
+      });
+      
+      // Handle input changes (for drafts and typing indicator)
+      this.messageInput.addEventListener('input', () => {
         // Save draft on input
         this._saveDraft();
         
@@ -82,13 +269,77 @@ const ChatManager = {
         this._sendTypingIndicator();
       });
       
-      // Add blur event listener to clear typing when clicking away
+      // Make the input show its placeholder when empty
       this.messageInput.addEventListener('blur', () => {
+        if (!this.messageInput.textContent.trim()) {
+          this.messageInput.classList.add('empty');
+        }
+        
+        // Clear typing indicator
         const currentUser = AppState.get('currentUser');
         delete this.usersTyping[currentUser.id];
         this._updateTypingIndicator();
       });
       
+      // Remove placeholder when focused
+      this.messageInput.addEventListener('focus', () => {
+        this.messageInput.classList.remove('empty');
+        
+        // Set cursor at end if no selection
+        if (window.getSelection().isCollapsed) {
+          this._placeCursorAtEnd(this.messageInput);
+        }
+      });
+      
+      // Initialize with empty class if no text
+      if (!this.messageInput.textContent.trim()) {
+        this.messageInput.classList.add('empty');
+      }
+      
+      // Paste handling to remove formatting
+      this.messageInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        
+        // Get text only
+        const text = e.clipboardData.getData('text/plain');
+        
+        // Insert at cursor position
+        document.execCommand('insertText', false, text);
+      });
+    },
+    
+    /**
+     * Place cursor at the end of contenteditable div
+     * @param {HTMLElement} el - The element to place cursor in
+     * @private
+     */
+    _placeCursorAtEnd: function(el) {
+      const range = document.createRange();
+      const selection = window.getSelection();
+      
+      // If the element has child nodes, set cursor after the last child
+      if (el.lastChild) {
+        range.setStartAfter(el.lastChild);
+        range.setEndAfter(el.lastChild);
+      } else {
+        // If empty, set cursor at beginning of element
+        range.setStart(el, 0);
+        range.setEnd(el, 0);
+      }
+      
+      selection.removeAllRanges();
+      selection.addRange(range);
+    },
+    
+    /**
+     * Set up basic event listeners (non-emoji related)
+     * @private
+     */
+    _setupBasicEventListeners: function() {
+      // Make sure the messages container is properly set up for positioning
+      this.messagesContainer.style.position = 'relative';
+      this.messagesContainer.style.overflow = 'auto';
+
       // Handle message context menu
       this.messagesContainer.addEventListener('contextmenu', (e) => {
         const messageElement = e.target.closest('.message');
@@ -107,48 +358,9 @@ const ChatManager = {
         this._handleFileUpload();
       });
       
-      // Handle emoji picker
+      // Handle emoji picker toggle
       this.emojiButton.addEventListener('click', (e) => {
         this._toggleEmojiPicker(e);
-      });
-      
-      // Close emoji picker when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('#emoji-modal') && !e.target.closest('#emoji-button')) {
-          this.emojiModal.classList.remove('active');
-        }
-      });
-      
-      // Populate emoji grid
-      this._populateEmojiGrid();
-      
-      // Handle emoji selection
-      const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
-      emojiGrid.addEventListener('click', (e) => {
-        const emoji = e.target.closest('.emoji');
-        if (emoji) {
-          this._insertEmoji(emoji.textContent);
-          this.emojiModal.classList.remove('active');
-        }
-      });
-      
-      // Handle emoji category selection
-      const emojiCategories = this.emojiModal.querySelectorAll('.emoji-category');
-      emojiCategories.forEach((category, index) => {
-        category.addEventListener('click', () => {
-          // Update active category
-          emojiCategories.forEach(c => c.classList.remove('active'));
-          category.classList.add('active');
-          
-          // Show emojis for this category
-          this._showEmojiCategory(index);
-        });
-      });
-      
-      // Handle emoji search
-      const emojiSearch = this.emojiModal.querySelector('.emoji-search');
-      emojiSearch.addEventListener('input', (e) => {
-        this._searchEmojis(e.target.value);
       });
       
       // Handle message reactions
@@ -215,9 +427,173 @@ const ChatManager = {
     },
     
     /**
+     * Set up emoji-related event listeners (after data is loaded)
+     * @private
+     */
+    _setupEmojiEventListeners: function() {
+      // Handle emoji selection
+      const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
+      emojiGrid.addEventListener('click', (e) => {
+        const emoji = e.target.closest('.emoji');
+        if (emoji) {
+          this._insertEmoji(emoji.textContent);
+          this.emojiModal.style.display = 'none';
+        }
+      });
+      
+      // Handle emoji category selection - first level shows all subcategories
+      const parentCategory = this.emojiModal.querySelector('.emoji-category.parent-category');
+      const emojiCategories = this.emojiModal.querySelector('.emoji-categories');
+      const scrollHint = this.emojiModal.querySelector('.emoji-categories-scroll-hint');
+      const subcategories = this.emojiModal.querySelectorAll('.emoji-subcategory');
+      
+      // Add horizontal scrolling with mouse wheel for emoji categories
+      emojiCategories.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault(); // Prevent vertical scrolling
+          emojiCategories.scrollLeft += e.deltaY; // Scroll horizontally instead
+        }
+      });
+      
+      // Show/hide scroll hint based on scrollability
+      const updateScrollHint = () => {
+        // Show hint only if categories are horizontally scrollable (content wider than container)
+        if (emojiCategories.scrollWidth > emojiCategories.clientWidth) {
+          scrollHint.style.display = 'block';
+          
+          // Hide hint if scrolled to the end
+          if (emojiCategories.scrollLeft + emojiCategories.clientWidth >= emojiCategories.scrollWidth - 5) {
+            scrollHint.style.opacity = '0';
+          } else {
+            scrollHint.style.opacity = '0.8';
+          }
+        } else {
+          scrollHint.style.display = 'none';
+        }
+      };
+      
+      // Update scroll hint on scroll
+      emojiCategories.addEventListener('scroll', updateScrollHint);
+      
+      // Update scroll hint when categories expand/collapse
+      const checkScrollability = () => {
+        setTimeout(updateScrollHint, 10); // Small delay to allow layout to update
+      };
+      
+      parentCategory.addEventListener('click', () => {
+        // Toggle between showing parent category only and showing all subcategories
+        const isExpanded = emojiCategories.classList.toggle('expanded');
+        
+        // Apply 8px padding when expanded, otherwise reset to 0
+        emojiCategories.style.padding = isExpanded ? '8px' : '0';
+        
+        // Show/hide subcategories
+        subcategories.forEach((subcat, index) => {
+          subcat.style.display = isExpanded ? 'flex' : 'none';
+          
+          // If expanding, update subcategory icons from emoji data
+          if (isExpanded && this.emojiData && this.emojiData.categories && this.emojiData.categories[index]) {
+            subcat.textContent = this.emojiData.categories[index].icon;
+          }
+        });
+        
+        if (isExpanded) {
+          // Clear emoji grid when expanded but don't select a subcategory by default
+          const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
+          emojiGrid.innerHTML = '<div class="emoji-placeholder" style="grid-column: span 6; text-align: center; color: #dcddde; padding: 20px 0;">Select a category to see emojis</div>';
+        } else {
+          // Also clear emoji grid when collapsed
+          const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
+          emojiGrid.innerHTML = '<div class="emoji-placeholder" style="grid-column: span 6; text-align: center; color: #dcddde; padding: 20px 0;">Select a category to see emojis</div>';
+        }
+        
+        // Check if scrolling indicators should be displayed
+        checkScrollability();
+      });
+      
+      // Handle subcategory clicks
+      subcategories.forEach((subcat, index) => {
+        subcat.addEventListener('click', () => {
+          // Update active subcategory
+          subcategories.forEach(sc => sc.classList.remove('active'));
+          subcat.classList.add('active');
+          
+          // Show emojis for this category
+          this._showEmojiCategory(index);
+        });
+      });
+      
+      // Handle emoji search
+      const emojiSearch = this.emojiModal.querySelector('.emoji-search');
+      emojiSearch.addEventListener('input', (e) => {
+        this._searchEmojis(e.target.value);
+      });
+      
+      // Initialize scroll hint status when modal is shown
+      this.emojiButton.addEventListener('click', checkScrollability);
+      
+      // Check scrollability on window resize too
+      window.addEventListener('resize', () => {
+        if (this.emojiModal.style.display === 'block') {
+          checkScrollability();
+        }
+      });
+    },
+    
+    /**
+     * Show all emojis from all categories
+     * @private
+     */
+    _showAllEmojis: function() {
+      if (!this.emojiData || !this.emojiData.categories) {
+        console.error('Emoji data not loaded yet');
+        return;
+      }
+      
+      // Clear the emoji grid but don't populate it
+      const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
+      emojiGrid.innerHTML = '<div class="emoji-placeholder" style="grid-column: span 6; text-align: center; color: #dcddde; padding: 20px 0;">Select a category to see emojis</div>';
+    },
+
+    /**
+     * Populate the emoji grid
+     * @private
+     */
+    _populateEmojiGrid: function() {
+      // First ensure emoji data is loaded
+      if (!this.emojiData || !this.emojiData.categories) {
+        console.warn('Emoji data not loaded yet');
+        return;
+      }
+      
+      // Don't modify the parent category icon - it's now an image element
+      // Instead, just show all emojis initially
+      this._showAllEmojis();
+    },
+
+    /**
      * Render messages for the active channel
      */
     renderMessages: function() {
+      // Skip rendering if we're currently deleting a message
+      if (this.isDeleting) {
+        console.log('[DEBUG] Skipping renderMessages because isDeleting is true');
+        return;
+      }
+      
+      console.log('[DEBUG] Beginning renderMessages');
+      
+      // Save the active element before rendering
+      const activeElement = document.activeElement;
+      const wasInputFocused = activeElement === this.messageInput;
+      const selection = window.getSelection();
+      const range = wasInputFocused && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+      
+      console.log('[DEBUG] Before rendering:', { 
+        wasInputFocused, 
+        activeElement: activeElement.tagName + (activeElement.id ? `#${activeElement.id}` : '')
+      });
+      
       const channelId = AppState.get('activeChannel');
       if (!channelId) {
         this.messagesContainer.innerHTML = '';
@@ -229,12 +605,13 @@ const ChatManager = {
         return;
       }
       
+      // Get the array of all messages for this channel
       const messages = AppState.getMessagesForChannel(channelId);
       
       // Clear existing messages
       this.messagesContainer.innerHTML = '';
       
-      // Check if there are any messages
+      // Check if there are any messages in the array
       if (!messages || messages.length === 0) {
         this.messagesContainer.innerHTML = `
           <div class="messages-start">
@@ -246,7 +623,7 @@ const ChatManager = {
         return;
       }
       
-      // Group messages by day
+      // Render all messages in the array, grouped by day for visual organization
       const messagesByDay = this._groupMessagesByDay(messages);
       
       // Render messages for each day
@@ -281,8 +658,34 @@ const ChatManager = {
       // Load message draft if exists
       this._loadDraft();
       
-      // Focus message input
-      this.messageInput.focus();
+      // Restore focus if input was focused before
+      if (wasInputFocused && this.messageInput) {
+        console.log('[DEBUG] Restoring focus after rendering');
+        setTimeout(() => {
+          console.log('[DEBUG] In setTimeout for focus restoration');
+          
+          // Focus the input element
+          this.messageInput.focus();
+          console.log('[DEBUG] focus() called, active element is now:', 
+                     document.activeElement.tagName + (document.activeElement.id ? `#${document.activeElement.id}` : ''));
+          
+          // If we had a text selection, try to restore it
+          if (range) {
+            try {
+              selection.removeAllRanges();
+              selection.addRange(range);
+              console.log('[DEBUG] Restored text selection');
+            } catch (e) {
+              console.error('[DEBUG] Could not restore selection:', e);
+              // Fallback: put cursor at end
+              this._placeCursorAtEnd(this.messageInput);
+            }
+          } else {
+            // Place cursor at the end
+            this._placeCursorAtEnd(this.messageInput);
+          }
+        }, 0);
+      }
     },
     
     /**
@@ -373,7 +776,29 @@ const ChatManager = {
       // Generate avatar initials
       const avatarInitials = message.avatar || Utils.getInitials(message.username);
       
-      // Create message HTML
+      // Check if the current user can delete this message
+      const currentUser = AppState.get('currentUser');
+      const denId = AppState.get('activeDen');
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageMessagesPermission = memberRoles.some(role => 
+        role.permissions && role.permissions.includes('manageMessages')
+      );
+      
+      const canDelete = message.userId === currentUser.id || // Own message
+                      currentMember?.isOwner || // Den owner
+                      hasManageMessagesPermission; // Has manage messages permission
+      
+      // Check if the current user can edit this message (only message owner)
+      const canEdit = message.userId === currentUser.id;
+      
+      // Create message HTML with conditional delete button
       messageElement.innerHTML = `
         <div class="message-timestamp">${timestamp}</div>
         <div class="avatar" style="background-color: ${Utils.getRandomAvatarColor()}">
@@ -382,7 +807,7 @@ const ChatManager = {
         <div class="message-content">
           <div class="message-header">
             <div class="username">${message.username}</div>
-            <div class="timestamp">${timestamp}</div>
+            <div class="timestamp">${message.edited ? `${timestamp} (edited)` : timestamp}</div>
           </div>
           <div class="message-text">${formattedContent}</div>
           ${message.attachment ? this._renderAttachment(message.attachment) : ''}
@@ -397,20 +822,38 @@ const ChatManager = {
               <line x1="15" y1="9" x2="15.01" y2="9"></line>
             </svg>
           </div>
+          ${canEdit ? `
           <div class="message-action" data-action="edit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </div>
+          ` : ''}
+          ${canDelete ? `
           <div class="message-action" data-action="delete">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18"></path>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
             </svg>
           </div>
+          ` : ''}
         </div>
       `;
+      
+      // Add hover effect to message content
+      const messageContent = messageElement.querySelector('.message-content');
+      messageContent.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#303030';
+        this.style.transition = 'background-color 0.2s ease';
+        this.style.borderRadius = '8px';
+      });
+      
+      messageContent.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '';
+        // Keep transition for smooth effect when leaving
+      });
       
       return messageElement;
     },
@@ -501,10 +944,11 @@ const ChatManager = {
         document.getElementById('voice-container').classList.remove('active');
         
         // Reset input
-        this.messageInput.value = '';
+        this.messageInput.textContent = '';
+        this.messageInput.classList.add('empty');
         
         // Update message input placeholder
-        this.messageInput.placeholder = `Message #${channel.name}`;
+        this.messageInput.setAttribute('data-placeholder', `Message #${channel.name}`);
         
         // Render messages for this channel
         this.renderMessages();
@@ -521,7 +965,7 @@ const ChatManager = {
       const channel = AppState.getActiveChannel();
       if (!channel || channel.type !== 'text') return;
       
-      const content = this.messageInput.value.trim();
+      const content = this.messageInput.textContent.trim();
       if (!content) return;
       
       // Generate a unique ID for the message
@@ -560,7 +1004,8 @@ const ChatManager = {
       AppState.addMessage(channelId, message);
       
       // Clear input
-      this.messageInput.value = '';
+      this.messageInput.textContent = '';
+      this.messageInput.classList.add('empty');
       
       // Clear draft
       delete this.messageDrafts[channelId];
@@ -572,6 +1017,9 @@ const ChatManager = {
       clearTimeout(this.typingTimeout);
       delete this.usersTyping[currentUser.id];
       this._updateTypingIndicator();
+      
+      // Make sure input stays focused
+      this.messageInput.focus();
     },
     
     /**
@@ -589,12 +1037,14 @@ const ChatManager = {
       const channelId = AppState.get('activeChannel');
       if (!channelId) return;
       
-      const content = this.messageInput.value.trim();
+      const content = this.messageInput.textContent.trim();
       
       if (content) {
         this.messageDrafts[channelId] = content;
+        this.messageInput.classList.remove('empty');
       } else {
         delete this.messageDrafts[channelId];
+        this.messageInput.classList.add('empty');
       }
     },
     
@@ -608,12 +1058,11 @@ const ChatManager = {
       
       const draft = this.messageDrafts[channelId];
       if (draft) {
-        this.messageInput.value = draft;
-        
-        // Position cursor at the end
-        this.messageInput.selectionStart = this.messageInput.selectionEnd = this.messageInput.value.length;
+        this.messageInput.textContent = draft;
+        this.messageInput.classList.remove('empty');
       } else {
-        this.messageInput.value = '';
+        this.messageInput.textContent = '';
+        this.messageInput.classList.add('empty');
       }
     },
     
@@ -781,105 +1230,132 @@ const ChatManager = {
      * @private
      */
     _toggleEmojiPicker: function(event) {
-      // Get the chat input container
-      const inputContainer = this.textContainer.querySelector('.chat-input-container');
-      const inputContainerRect = inputContainer.getBoundingClientRect();
+      // Prevent event bubbling
+      event.preventDefault();
+      event.stopPropagation();
       
-      // Toggle active state
-      const isOpening = !this.emojiModal.classList.contains('active');
+      // Check if modal is already visible
+      const isVisible = this.emojiModal.style.display === 'block';
       
-      if (isOpening) {
-        // Make it visible but not displayed yet for measurement
-        this.emojiModal.style.opacity = '0';
-        this.emojiModal.classList.add('active');
-        
-        // Get dimensions after it's in the DOM
-        const modalRect = this.emojiModal.getBoundingClientRect();
-        
-        // Calculate position - align to top right of chat input
-        let topPosition = inputContainerRect.top - modalRect.height;
-        let leftPosition = inputContainerRect.right - modalRect.width;
-        
-        // Ensure it stays within the viewport
-        topPosition = Math.max(10, topPosition); // At least 10px from the top
-        leftPosition = Math.min(window.innerWidth - modalRect.width - 10, leftPosition);
-        
-        // Position at top right of input container
-        this.emojiModal.style.top = topPosition -90 + 'px';
-        this.emojiModal.style.left = leftPosition + 'px';
-        
-        // Now make it visible
-        this.emojiModal.style.opacity = '1';
-        
-        // Focus search
-        this.emojiModal.querySelector('.emoji-search').focus();
-      } else {
-        // Just close it
-        this.emojiModal.classList.remove('active');
+      // Clear any existing event listeners to avoid memory leaks
+      if (this.emojiModal._clickHandler) {
+        document.removeEventListener('click', this.emojiModal._clickHandler);
+        this.emojiModal._clickHandler = null;
       }
+      
+      if (isVisible) {
+        this.emojiModal.style.display = 'none';
+        return;
+      }
+      
+      // Make sure the emoji modal is still in the messages container
+      if (this.emojiModal.parentElement !== this.messagesContainer) {
+        // If not in messages container, re-add it
+        this.messagesContainer.appendChild(this.emojiModal);
+      }
+      
+      // Position and show the emoji modal
+      this.emojiModal.style.position = 'absolute';
+      this.emojiModal.style.bottom = '10px';
+      this.emojiModal.style.right = '10px';
+      this.emojiModal.style.display = 'block';
+      
+      // Reset the search and categories
+      const searchInput = this.emojiModal.querySelector('.emoji-search');
+      searchInput.value = '';
+      
+      const emojiCategories = this.emojiModal.querySelector('.emoji-categories');
+      const subcategories = this.emojiModal.querySelectorAll('.emoji-subcategory');
+      emojiCategories.classList.remove('expanded');
+      
+      subcategories.forEach(subcat => {
+        subcat.style.display = 'none';
+      });
+      
+      const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
+      emojiGrid.innerHTML = '<div class="emoji-placeholder" style="grid-column: span 6; text-align: center; color: #dcddde; padding: 20px 0;">Select a category to see emojis</div>';
+      
+      // Check if the scroll hint should be shown
+      const scrollHint = this.emojiModal.querySelector('.emoji-categories-scroll-hint');
+      const updateScrollHint = () => {
+        if (emojiCategories.scrollWidth > emojiCategories.clientWidth) {
+          scrollHint.style.display = 'block';
+          scrollHint.style.opacity = '0.8';
+        } else {
+          scrollHint.style.display = 'none';
+        }
+      };
+      setTimeout(updateScrollHint, 10);
+      
+      // Focus search after a short delay
+      setTimeout(() => {
+        searchInput.focus();
+      }, 100);
+      
+      // Set up a click handler for closing the modal
+      const clickHandler = (e) => {
+        if (!this.emojiModal.contains(e.target) && 
+            e.target !== this.emojiButton && 
+            !this.emojiButton.contains(e.target)) {
+          this.emojiModal.style.display = 'none';
+          document.removeEventListener('click', clickHandler);
+        }
+      };
+      
+      // Add the click handler after a short delay to prevent immediate closing
+      setTimeout(() => {
+        document.addEventListener('click', clickHandler);
+        this.emojiModal._clickHandler = clickHandler;
+      }, 10);
     },
     
     /**
-     * Populate the emoji grid
+     * Load emoji data from JSON file
+     * @returns {Promise} Promise that resolves when emoji data is loaded
      * @private
      */
-    _populateEmojiPicker: function() {
-      // Common emoji categories
-      this.emojiCategories = [
-        // Smileys & People
-        ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '🥰', '😘', '😗', '😙', '😚', '🙂', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🤑', '😲', '☹️', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵', '🥶', '😳', '🤪', '😵', '😡', '😠', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '😇', '🥳', '🥴', '🥺', '🤠', '🤡', '🤥', '🤫', '🤭', '🧐', '🤓'],
-        
-        // Animals & Nature
-        ['🦊', '🐱', '🐶', '🐭', '🐹', '🐰', '🦝', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷', '🕸', '🦂', '🦀', '🦞', '🦐', '🦑', '🐙', '🦕', '🦖', '🦎', '🐍', '🐢', '🦓', '🦍', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🦙', '🐏', '🐑', '🐐', '🦌', '🐕', '🐩', '🐈', '🐓', '🦃', '🕊'],
-        
-        // Food & Drink
-        ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶', '🌽', '🥕', '🥔', '🍠', '🥐', '🍞', '🥖', '🥨', '🥯', '🧀', '🥚', '🍳', '🥞', '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🌮', '🌯', '🥗', '🥘', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🍰', '🧁', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🌰', '🥜', '🍯', '🥛', '🍼', '☕', '🍵', '🥤', '🍶', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🍾'],
-        
-        // Activities
-        ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '⛳', '🏹', '🎣', '🥊', '🥋', '🎽', '⛸', '🥌', '🛷', '🛹', '🎿', '⛷', '🏂', '🏋️', '🤼', '🤸', '⛹️', '🤺', '🤾', '🏌️', '🏇', '🧘', '🏄', '🏊', '🤽', '🚣', '🧗', '🚵', '🚴', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🎻', '🎲', '🧩', '♟', '🎯', '🎳', '🎮', '🎰'],
-        
-        // Travel & Places
-        ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🛴', '🚲', '🛵', '🏍', '🚨', '🚔', '🚍', '🚘', '🚖', '🚡', '🚠', '🚟', '🚃', '🚋', '🚞', '🚝', '🚄', '🚅', '🚈', '🚂', '🚆', '🚇', '🚊', '🚉', '✈️', '🛫', '🛬', '🛩', '💺', '🛰', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥', '🛳', '⛴', '🚢', '⚓', '⛽', '🚧', '🚦', '🚥', '🚏', '🗺', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟', '🎡', '🎢', '🎠', '⛲', '⛱', '🏖', '🏝', '🏜', '🌋', '⛰', '🏔', '🗻', '🏕', '⛺', '🏠', '🏡', '🏘', '🏚', '🏗', '🏭', '🏢', '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛', '⛪', '🕌', '🕍', '🕋', '⛩', '🛤', '🛣', '🗾', '🎑', '🏞', '🌅', '🌄', '🌠', '🎇', '🎆', '🌇', '🌆', '🏙', '🌃', '🌌', '🌉', '🌁'],
-        
-        // Objects
-        ['💡', '🔦', '🕯', '🧯', '🛢', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '💎', '⚖️', '🔧', '🔨', '⚒', '🛠', '⛏', '🔩', '⚙️', '🔫', '💣', '🧨', '🔪', '🗡', '⚔️', '🛡', '🚬', '⚰️', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳', '💊', '💉', '🧬', '🦠', '🧫', '🧪', '🌡', '🧹', '🧺', '🧻', '🚽', '🚰', '🚿', '🛁', '🛀', '🧼', '🧽', '🧴', '🛎', '🔑', '🗝', '🚪', '🛋', '🛏', '🛌', '🧸', '🖼', '🛍', '🛒', '🎁', '🎈', '🎏', '🎀', '🎊', '🎉', '🧧', '✉️', '📩', '📨', '📧', '💌', '📥', '📤', '📦', '🏷', '📪', '📫', '📬', '📭', '📮', '📯', '📜', '📃', '📄', '📑', '🧾', '📊', '📈', '📉', '🗒', '🗓', '📆', '📅', '🗑', '📇', '🗃', '🗳', '🗄', '📋', '📁', '📂', '🗂', '🗞', '📰', '📓', '📔', '📒', '📕', '📗', '📘', '📙', '📚', '📖', '🔖', '🧷', '🔗', '📎', '🖇', '📐', '📏', '🧮', '📌', '📍', '✂️', '🖊', '🖋', '✒️', '🖌', '🖍', '📝'],
-        
-        // Symbols
-        ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
-      ];
-      
-      // Store all emojis for search
-      this.allEmojis = this.emojiCategories.flat();
-      
-      // Show first category by default
-      this._showEmojiCategory(0);
+    _loadEmojiData: function() {
+      return new Promise((resolve, reject) => {
+        fetch('./js/data/emojis.json')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            this.emojiData = data;
+            
+            // Extract all emojis for search functionality
+            this.allEmojis = [];
+            data.categories.forEach(category => {
+              this.allEmojis = this.allEmojis.concat(category.emojis);
+            });
+            
+            resolve();
+          })
+          .catch(reject);
+      });
     },
-    
-    /**
-     * Populate the emoji grid with emojis
-     * @private
-     */
-    _populateEmojiGrid: function() {
-      // Initialize emoji data
-      this._populateEmojiPicker();
-      
-      // Add emoji categories
-      const emojiCategories = this.emojiModal.querySelectorAll('.emoji-category');
-      emojiCategories[0].classList.add('active');
-    },
-    
+
     /**
      * Show emojis for a specific category
      * @param {number} categoryIndex - The category index
      * @private
      */
     _showEmojiCategory: function(categoryIndex) {
+      if (!this.emojiData || !this.emojiData.categories) {
+        console.error('Emoji data not loaded yet');
+        return;
+      }
+  
       const emojiGrid = this.emojiModal.querySelector('.emoji-grid');
       emojiGrid.innerHTML = '';
       
-      const emojis = this.emojiCategories[categoryIndex] || [];
+      const category = this.emojiData.categories[categoryIndex];
+      if (!category || !category.emojis) return;
       
-      emojis.forEach(emoji => {
+      category.emojis.forEach(emoji => {
         const emojiElement = document.createElement('div');
         emojiElement.className = 'emoji';
         emojiElement.textContent = emoji;
@@ -893,6 +1369,11 @@ const ChatManager = {
      * @private
      */
     _searchEmojis: function(query) {
+      if (!this.emojiData || !this.allEmojis) {
+        console.error('Emoji data not loaded yet');
+        return;
+      }
+      
       if (!query.trim()) {
         // Show active category if no search query
         const activeCategory = this.emojiModal.querySelector('.emoji-category.active');
@@ -926,20 +1407,17 @@ const ChatManager = {
      * @private
      */
     _insertEmoji: function(emoji) {
-      const input = this.messageInput;
-      const startPos = input.selectionStart;
-      const endPos = input.selectionEnd;
-      const before = input.value.substring(0, startPos);
-      const after = input.value.substring(endPos);
-      
-      input.value = before + emoji + after;
-      
-      // Position cursor after the inserted emoji
-      const newCursorPos = startPos + emoji.length;
-      input.selectionStart = input.selectionEnd = newCursorPos;
-      
       // Focus input
-      input.focus();
+      this.messageInput.focus();
+      
+      // Insert at cursor position
+      document.execCommand('insertText', false, emoji);
+      
+      // Mark as not empty
+      this.messageInput.classList.remove('empty');
+      
+      // Save draft
+      this._saveDraft();
     },
     
     /**
@@ -1033,7 +1511,7 @@ const ChatManager = {
         }
       ];
       
-      // Add edit/delete options if own message
+      // Add edit option if own message
       if (isOwnMessage) {
         menuItems.push({ divider: true });
         
@@ -1041,13 +1519,6 @@ const ChatManager = {
           label: 'Edit Message',
           icon: '✏️',
           onClick: () => this._handleEditMessage(messageId)
-        });
-        
-        menuItems.push({
-          label: 'Delete Message',
-          icon: '🗑️',
-          danger: true,
-          onClick: () => this._handleDeleteMessage(messageId)
         });
       }
       
@@ -1064,8 +1535,8 @@ const ChatManager = {
       const reactionPicker = document.createElement('div');
       reactionPicker.className = 'reaction-picker';
       
-      // Common reactions
-      const commonReactions = ['👍', '👎', '❤️', '🦊', '🎉', '😂', '😢', '😡', '🤔', '👀'];
+      // Use common reactions from the emoji data
+      const commonReactions = this.emojiData?.commonReactions || ['👍', '👎', '❤️', '🦊', '😂'];
       
       reactionPicker.innerHTML = `
         <div class="reaction-picker-header">
@@ -1229,10 +1700,10 @@ const ChatManager = {
       
       // Add reply formatting
       const replyPrefix = `> ${message.content.split('\n').join('\n> ')}\n\n`;
-      this.messageInput.value = replyPrefix + this.messageInput.value;
+      this.messageInput.textContent = replyPrefix + this.messageInput.textContent;
       
       // Position cursor at the end
-      this.messageInput.selectionStart = this.messageInput.selectionEnd = this.messageInput.value.length;
+      this.messageInput.selectionStart = this.messageInput.selectionEnd = this.messageInput.textContent.length;
     },
     
     /**
@@ -1355,108 +1826,6 @@ const ChatManager = {
     },
     
     /**
-     * Handle deleting a message
-     * @param {string} messageId - The message ID
-     * @private
-     */
-    _handleDeleteMessage: function(messageId) {
-      const channelId = AppState.get('activeChannel');
-      if (!channelId) return;
-      
-      const messages = AppState.getMessagesForChannel(channelId);
-      const message = messages.find(msg => msg.id === messageId);
-      
-      if (!message) return;
-      
-      // Ask for confirmation
-      if (confirm('Are you sure you want to delete this message?')) {
-        // Remove message from state
-        const updatedMessages = messages.filter(msg => msg.id !== messageId);
-        
-        const allMessages = { ...AppState.get('messages') };
-        allMessages[channelId] = updatedMessages;
-        
-        AppState.set('messages', allMessages);
-        
-        // Remove message element
-        const messageElement = this.messagesContainer.querySelector(`.message[data-message-id="${messageId}"]`);
-        if (messageElement) {
-          messageElement.remove();
-        }
-        
-        Utils.showToast('Message deleted', 'success');
-        
-        // Ensure the input is in an interactive state
-        this.messageInput.disabled = false;
-        this.messageInput.readOnly = false;
-      }
-    },
-    
-    /**
-     * Load older messages
-     * @private
-     */
-    _loadOlderMessages: function() {
-      // In a real app, this would fetch older messages from the server
-      // For this demo, we'll just show a toast
-      Utils.showToast('No older messages available', 'info');
-    },
-
-    /**
-     * Render a single message
-     * @param {Object} message - Message data
-     * @param {boolean} isGrouped - Whether this message is part of a group from the same user
-     * @returns {HTMLElement} The message element
-     * @private
-     */
-    _renderMessage: function(message, isGrouped = false) {
-      const messageElement = document.createElement('div');
-      messageElement.className = `message ${message.type || ''}`;
-      messageElement.dataset.messageId = message.id;
-      
-      // Add grouped class if this message is part of a group
-      if (isGrouped) {
-        messageElement.classList.add('grouped');
-      }
-      
-      // Rest of the message rendering code remains unchanged
-      // ...existing code...
-    },
-    
-    /**
-     * Add a message to the chat
-     * @param {Object} message - The message data
-     * @private
-     */
-    _addMessage: function(message) {
-      // Get the previous message to check if this should be grouped
-      let isGrouped = false;
-      const prevMessage = this.messagesContainer.lastChild;
-      
-      if (prevMessage && prevMessage.dataset.userId === message.userId) {
-        // Check if the time between messages is less than 5 minutes (300000ms)
-        const prevTime = new Date(prevMessage.dataset.timestamp).getTime();
-        const currentTime = new Date(message.timestamp).getTime();
-        
-        if (currentTime - prevTime < 300000) {
-          isGrouped = true;
-        }
-      }
-      
-      const messageElement = this._renderMessage(message, isGrouped);
-      
-      // Add user ID and timestamp as data attributes to make grouping easier
-      messageElement.dataset.userId = message.userId;
-      messageElement.dataset.timestamp = message.timestamp;
-      
-      // Add to messages container
-      this.messagesContainer.appendChild(messageElement);
-      
-      // Scroll to bottom after adding a message
-      this._scrollToBottom();
-    },
-
-    /**
      * Handle message action button clicks
      * @param {string} action - The action type (react, edit, delete)
      * @param {string} messageId - The message ID
@@ -1473,6 +1842,19 @@ const ChatManager = {
       if (!message) return;
       
       const currentUser = AppState.get('currentUser');
+      const denId = AppState.get('activeDen');
+      const members = AppState.getMembersForDen(denId) || [];
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageMessagesPermission = memberRoles.some(role => 
+        role.permissions && role.permissions.includes('manageMessages')
+      );
       
       switch (action) {
         case 'react':
@@ -1489,19 +1871,62 @@ const ChatManager = {
           break;
           
         case 'delete':
-          // Only allow deleting own messages
-          if (message.userId === currentUser.id) {
+          // Check if user has permission to delete the message
+          const canDelete = message.userId === currentUser.id || // Own message
+                          currentMember?.isOwner || // Den owner
+                          hasManageMessagesPermission; // Has manage messages permission
+          
+          if (canDelete) {
             this._handleDeleteMessage(messageId);
           } else {
-            Utils.showToast("You can only delete your own messages", "error");
+            Utils.showToast("You don't have permission to delete this message", "error");
           }
           break;
           
         default:
           console.warn(`Unknown message action: ${action}`);
       }
+    },
+
+    /**
+     * Handle deleting a message
+     * @param {string} messageId - The message ID to delete
+     * @private
+     */
+    _handleDeleteMessage: function(messageId) {
+      const channelId = AppState.get('activeChannel');
+      if (!channelId) return;
+      
+      const messages = AppState.getMessagesForChannel(channelId);
+      const messageIndex = messages.findIndex(msg => msg.id === messageId);
+      
+      if (messageIndex === -1) return;
+      
+      // Remove message from state
+      const updatedMessages = [...messages];
+      updatedMessages.splice(messageIndex, 1);
+      
+      const allMessages = { ...AppState.get('messages') };
+      allMessages[channelId] = updatedMessages;
+      
+      AppState.set('messages', allMessages);
+      
+      // Remove message element from DOM
+      const messageElement = this.messagesContainer.querySelector(`.message[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.remove();
+      }
+      
+      Utils.showToast("Message deleted", "success");
     }
   };
   
-  // Export for use in other modules
-  window.ChatManager = ChatManager;
+  // Double ensure ChatManager is globally accessible
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = global.ChatManager;
+  }
+  
+  // Log that ChatManager has been defined
+  console.log("ChatManager defined globally");
+  
+})(typeof window !== 'undefined' ? window : this);

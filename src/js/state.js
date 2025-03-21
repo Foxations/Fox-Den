@@ -52,6 +52,9 @@ const AppState = {
       // Members data (mapped by den ID)
       members: {},
       
+      // Roles data (mapped by den ID)
+      roles: {},
+      
       // Friends list
       friends: [],
       
@@ -606,17 +609,76 @@ const AppState = {
     },
     
     /**
-     * Toggle the theme between dark and light
+     * Set the theme
+     * @param {string} newTheme - Either 'dark' or 'light'
+     * @param {Event} event - Optional DOM event that triggered the theme change
      */
-    toggleTheme: function() {
-      const newTheme = this._data.currentTheme === 'dark' ? 'light' : 'dark';
-      this.set('currentTheme', newTheme, true);
+    setTheme: function(newTheme, event = null) {
+      if (newTheme !== 'dark' && newTheme !== 'light') {
+        console.error('Invalid theme:', newTheme);
+        return;
+      }
+      
+      const oldTheme = this.get('currentTheme');
+      if (oldTheme === newTheme) return; // No change needed
+      
+      console.log(`Changing theme from ${oldTheme} to ${newTheme}`);
       
       // Update body class
-      document.body.className = `theme-${newTheme}`;
+      document.body.classList.remove(`theme-${oldTheme}`);
+      document.body.classList.add(`theme-${newTheme}`);
       
-      // Save theme preference
+      // Get ripple container (create if it doesn't exist)
+      let rippleContainer = document.querySelector('.theme-transition-container');
+      if (!rippleContainer) {
+        rippleContainer = document.createElement('div');
+        rippleContainer.className = 'theme-transition-container';
+        document.body.appendChild(rippleContainer);
+      }
+      
+      // Calculate ripple position, defaulting to center of screen
+      let triggerX = window.innerWidth / 2;
+      let triggerY = window.innerHeight / 2;
+      
+      // If the event exists and has a target, use its position for the ripple
+      if (event && event.currentTarget) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        triggerX = rect.left + rect.width / 2;
+        triggerY = rect.top + rect.height / 2;
+      }
+      
+      // Create ripple effect
+      rippleContainer.innerHTML = '';
+      const ripple = document.createElement('div');
+      ripple.className = 'theme-transition-ripple';
+      ripple.style.left = `${triggerX}px`;
+      ripple.style.top = `${triggerY}px`;
+      ripple.style.backgroundColor = newTheme === 'light' ? 
+        getComputedStyle(document.documentElement).getPropertyValue('--light-bg') : 
+        getComputedStyle(document.documentElement).getPropertyValue('--dark-bg');
+      
+      // Activate the transition container
+      rippleContainer.classList.add('active');
+      rippleContainer.appendChild(ripple);
+      
+      // Update state immediately
+      this.set('currentTheme', newTheme, true);
       localStorage.setItem('foxden-theme', newTheme);
+      
+      // Notify the electron main process about the theme change
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.send('theme-changed', newTheme);
+      }
+      
+      // Dispatch event for components to react
+      document.dispatchEvent(new CustomEvent('themeChanged', { 
+        detail: { oldTheme, newTheme }
+      }));
+      
+      // Remove the transition container after the animation completes
+      setTimeout(() => {
+        rippleContainer.classList.remove('active');
+      }, 1500); // Animation duration is 1.5s
     },
     
     /**
@@ -725,6 +787,92 @@ const AppState = {
      */
     preserveScreenShareOnDisconnect: function() {
       this._data.preserveScreenShare = true;
+    },
+    
+    /**
+     * Get the roles for a specific den
+     * @param {string} denId - The den ID
+     * @returns {Array} Array of roles for the den
+     */
+    getRolesForDen: function(denId) {
+      // Initialize if needed
+      if (!this._data.roles[denId]) {
+        // Create default roles for the den (admin and moderator)
+        const defaultRoles = [
+          {
+            id: 'admin',
+            name: 'Admin',
+            color: '#e74c3c',
+            permissions: ['manageChannels', 'manageRoles', 'kickMembers', 'banMembers', 'manageMessages', 'mentionEveryone', 'uploadFiles'],
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'moderator',
+            name: 'Moderator',
+            color: '#3498db',
+            permissions: ['kickMembers', 'manageMessages', 'uploadFiles'],
+            createdAt: new Date().toISOString()
+          }
+        ];
+        
+        this._data.roles[denId] = defaultRoles;
+      }
+      
+      return this._data.roles[denId];
+    },
+    
+    /**
+     * Set the roles for a specific den
+     * @param {string} denId - The den ID
+     * @param {Array} roles - The updated roles array
+     */
+    setRolesForDen: function(denId, roles) {
+      // Update roles for this den
+      this._data.roles = {
+        ...this._data.roles,
+        [denId]: roles
+      };
+      
+      // Notify subscribers
+      this._notify('roles', this._data.roles);
+      this._notify(`roles:${denId}`, roles);
+      
+      // Save state
+      this._saveState();
+    },
+    
+    /**
+     * Check if current user has moderator permissions in a den
+     * @param {string} [denId=null] - The den ID to check, defaults to active den
+     * @returns {boolean} Whether user has mod permissions
+     */
+    userHasModPermissions: function(denId = null) {
+      // Get the current active den if no den ID is provided
+      const targetDenId = denId || this._data.activeDen;
+      if (!targetDenId) return false;
+      
+      // Get the current user
+      const currentUser = this._data.currentUser;
+      if (!currentUser) return false;
+      
+      // Find the user's membership in the den
+      const denMembers = this.getMembersForDen(targetDenId);
+      const userMembership = denMembers.find(member => member.id === currentUser.id);
+      
+      if (!userMembership) return false;
+      
+      // Check if user is the owner
+      if (userMembership.isOwner) return true;
+      
+      // Check if user has moderator or admin role
+      if (userMembership.roles && (
+          userMembership.roles.includes('moderator') || 
+          userMembership.roles.includes('admin'))
+      ) {
+        return true;
+      }
+      
+      return false;
     }
   };
   

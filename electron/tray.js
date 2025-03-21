@@ -1,14 +1,15 @@
 /**
  * FoxDen System Tray Icon
  */
-const { app, Menu, Tray } = require('electron');
+const { app, Menu, Tray, ipcMain } = require('electron');
 const path = require('path');
 
 let trayInstance = null;
+let currentTheme = 'dark';
 
 function createTray(mainWindow) {
-  // Create tray icon
-  const iconPath = path.join(__dirname, '../src/assets/icons/png/16x16.png');
+  // Create tray icon using the FOX icon for dark theme (default)
+  const iconPath = path.join(__dirname, '../src/assets/icons/png/FOX_16x16.png');
   trayInstance = new Tray(iconPath);
   
   // Create context menu
@@ -73,7 +74,23 @@ function createTray(mainWindow) {
     }
   });
   
+  // Listen for theme change events
+  ipcMain.on('theme-changed', (event, theme) => {
+    updateTrayIcon(theme);
+  });
+  
   return trayInstance;
+}
+
+function updateTrayIcon(theme) {
+  if (!trayInstance) return;
+  
+  currentTheme = theme || currentTheme;
+  
+  const iconName = currentTheme === 'light' ? 'FENNEC_16x16.png' : 'FOX_16x16.png';
+  const iconPath = path.join(__dirname, `../src/assets/icons/png/${iconName}`);
+  
+  trayInstance.setImage(iconPath);
 }
 
 function destroyTray() {
@@ -83,4 +100,4 @@ function destroyTray() {
   }
 }
 
-module.exports = { createTray, destroyTray };
+module.exports = { createTray, destroyTray, updateTrayIcon };

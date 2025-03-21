@@ -7,7 +7,6 @@
   
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-primary);
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
@@ -70,6 +69,8 @@
     height: calc(100vh - 32px); /* Subtract titlebar height */
     overflow: hidden;
     margin-top: 32px; /* Add margin to account for fixed titlebar */
+    position: relative;
+    z-index: 1; /* Ensure app content is above the ripple */
   }
   
   /* General buttons and interactive elements */
@@ -88,16 +89,18 @@
   }
   
   button.primary {
-    background-color: var(--accent);
+    background-color: var(--theme-accent);
     color: white;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-sm);
     font-weight: var(--font-weight-medium);
-    transition: background-color var(--transition-short) var (--ease-out);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    transition: background-color var(--transition-short) var(--ease-out);
   }
   
   button.primary:hover {
-    background-color: var(--accent-hover);
+    background-color: var(--theme-accent-hover);
   }
   
   button.secondary {
@@ -144,45 +147,51 @@
   
   /* Modals */
   .modal {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: 999;
+  }
+  
+  .modal.hidden {
     display: none;
-    z-index: var(--z-index-modal);
   }
   
   .modal.active {
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
+    display: block;
   }
   
   .modal-backdrop {
     position: absolute;
     top: 0;
     left: 0;
-    /* width: 100%;
-    height: 100%; */
+    width: 100%;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
   }
   
   .modal-container {
-    position: relative;
-    background-color: var(--bg-secondary);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-primary);
     border-radius: var(--radius-md);
-    width: 80%;
-    max-width: 500px;
-    max-height: 80%;
-    overflow: hidden;
     box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    width: 500px;
+    max-width: 90vw;
+    max-height: 80vh;
     display: flex;
     flex-direction: column;
   }
   
   .modal-container.small {
-    max-width: 350px;
+    width: 350px;
   }
   
   .modal-header {
@@ -193,26 +202,28 @@
     align-items: center;
   }
   
-  .modal-header h3 {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
-  }
-  
   .modal-close {
     background: none;
     border: none;
-    color: var(--text-secondary);
-    font-size: var(--font-size-xl);
     cursor: pointer;
-    transition: color var(--transition-short) var(--ease-out);
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
   }
   
   .modal-close:hover {
+    background-color: var(--bg-hover);
     color: var(--text-primary);
   }
   
   .modal-content {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     overflow-y: auto;
     flex: 1;
   }
@@ -222,26 +233,39 @@
   }
   
   .modal-actions {
-    padding: var(--spacing-md);
-    border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
   }
   
-  .input-group {
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .input-group label {
-    display: block;
+  .modal-button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    margin-bottom: var(--spacing-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background-color var(--transition-short) var(--ease-out);
   }
   
-  .input-group input {
-    width: 100%;
+  .modal-button.primary {
+    background-color: var(--theme-accent);
+    border: none;
+    color: white;
+  }
+  
+  .modal-button.primary:hover {
+    background-color: var(--theme-accent-hover);
+  }
+  
+  .modal-button.secondary {
+    background-color: var(--bg-tertiary);
+    border: none;
+    color: var(--text-primary);
+  }
+  
+  .modal-button.secondary:hover {
+    background-color: var(--bg-hover);
   }
   
   /* Toast notifications */
@@ -281,7 +305,7 @@
   }
   
   .toast.info {
-    border-left: 4px solid var(--accent);
+    border-left: 4px solid var(--theme-accent);
   }
   
   .toast-icon {
@@ -396,4 +420,91 @@
   .message-text, input, textarea {
     user-select: text;
     -webkit-user-select: text;
+  }
+  
+  /* Animation for logo transitions */
+  @keyframes logo-pop {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  .pop-animation {
+    animation: logo-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Theme background */
+  .theme-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-color: var(--bg-primary);
+    transition: background-color 0.8s ease;
+  }
+  
+  /* Remove previous transition rules that are now redundant */
+  /* body, .app-layout, .main-content, .channels-sidebar, .dens-sidebar, .members-sidebar,
+  .chat-area, .chat-header, .chat-input-container, .titlebar, .modal-container,
+  .user-controls, .den-header, .message, .channel, .members-group {
+    transition: background-color 0.8s ease, border-color 0.8s ease;
+  } */
+  
+  /* Remove the ripple classes entirely */
+  .theme-transition-container {
+    display: none;
+  }
+  
+  .theme-transition-ripple {
+    display: none;
+  }
+  
+  /* Add consistent transitions for all container elements */
+  .titlebar,
+  .app-layout,
+  .dens-sidebar,
+  .den,
+  .channels-sidebar,
+  .den-header,
+  .channel, 
+  .chat-area,
+  .chat-header,
+  .chat-input-container,
+  .members-sidebar,
+  .user-controls,
+  .modal-container,
+  .members-group,
+  .message,
+  .icon-button,
+  .tooltip,
+  .dropdown-menu,
+  .user-avatar,
+  .den-icon-preview {
+    transition: background-color 0.8s ease, 
+                border-color 0.8s ease,
+                box-shadow 0.8s ease;
+  }
+
+  /* Remove text color transitions to make them instant */
+  body, 
+  .app-layout *, 
+  .message *, 
+  .channel *, 
+  .titlebar *,
+  .den-header *,
+  .chat-header * {
+    transition: none;
+  }
+
+  /* Text transitions for theme switches */
+  .message-text, p, h1, h2, h3, h4, h5, h6, span, label, .channel-name, .den-name, .user-name, .message-author, 
+  .channel-name, .settings-title, .settings-subtitle, .modal-title, .toast-message {
+    transition: color 0.5s ease;
+  }
+
+  /* Smooth transitions for UI elements */
+  .button, .toggle-slider, .modal-content, .dropdown-content {
+    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
   }

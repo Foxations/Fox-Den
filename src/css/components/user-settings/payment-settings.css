@@ -1,0 +1,131 @@
+/* Payment related styling */
+.premium-section {
+  margin-bottom: 40px;
+}
+
+.premium-banner, .foxpack-banner {
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.premium-logo, .foxpack-logo {
+  margin-bottom: 16px;
+}
+
+.premium-banner h4, .foxpack-banner h4 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.premium-features ul, .foxpack-benefits ul {
+  margin-left: 24px;
+  margin-bottom: 16px;
+}
+
+.premium-features li, .foxpack-benefits li {
+  margin-bottom: 8px;
+}
+
+.premium-price {
+  margin-bottom: 16px;
+}
+
+.premium-amount {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.premium-period {
+  font-size: 14px;
+}
+
+.premium-button {
+  align-self: center;
+}
+
+.boosts-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.boosts-available, .boosted-dens {
+  flex: 1;
+}
+
+.boost-count {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.no-clips-message, .no-apps-message, .no-subscriptions-message, .no-boosts-message {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* Gift card styling */
+.gift-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.gift-tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  position: relative;
+  color: var(--text-secondary);
+}
+
+.gift-tab.active {
+  color: var(--text-primary);
+}
+
+.gift-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--text-accent);
+}
+
+.gift-item, .device-item, .connection-type, .registered-app, .merch-item {
+  display: flex;
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.gift-icon, .device-icon, .connection-icon, .app-icon, .merch-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--spacing-md);
+}
+
+.gift-info, .device-info, .app-info, .merch-info {
+  flex: 1;
+}
+
+.gift-name, .device-name, .connection-name, .app-name, .merch-name {
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.gift-sender, .gift-date, .device-details, .app-path, .merch-price {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+} 

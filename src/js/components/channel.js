@@ -269,82 +269,217 @@ const ChannelManager = {
      * @param {string} [category] - The category for the new channel
      */
     showCreateChannelModal: function(category) {
+      const denId = AppState.get('activeDen');
+      if (!denId) return;
+      
+      // Check if user has permission to manage channels
+      const currentUser = AppState.get('currentUser');
+      const members = AppState.getMembersForDen(denId) || [];
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageChannelsPermission = currentMember?.isOwner || // Den owner
+        memberRoles.some(role => role.permissions && role.permissions.includes('manageChannels'));
+        
+      if (!hasManageChannelsPermission) {
+        Utils.showToast("You don't have permission to create channels", "error");
+        return;
+      }
+      
+      this._showChannelModal(category);
+    },
+    
+    /**
+     * Show the channel modal for creating or editing channels
+     * @param {Object|string} [input] - The channel to edit or the category for new channel
+     * @private
+     */
+    _showChannelModal: function(input) {
+      const denId = AppState.get('activeDen');
+      if (!denId) return;
+      
+      const isEditing = input && typeof input === 'object';
+      const channel = isEditing ? input : null;
+      const defaultCategory = !isEditing && typeof input === 'string' ? input : null;
+      
       // Create modal if it doesn't exist
       let modal = document.getElementById('channel-modal');
       if (!modal) {
         modal = document.createElement('div');
         modal.className = 'modal';
         modal.id = 'channel-modal';
-        
-        const modalHTML = `
-          <div class="modal-backdrop"></div>
-          <div class="modal-container">
-            <div class="modal-header">
-              <h3>Create Channel</h3>
-              <button class="modal-close">✕</button>
-            </div>
-            <div class="modal-content">
-              <div class="modal-section">
-                <div class="input-group">
-                  <label for="channel-name">Channel Name</label>
-                  <input type="text" id="channel-name" placeholder="Enter a channel name">
-                </div>
-                <div class="input-group">
-                  <label for="channel-type">Channel Type</label>
-                  <div class="radio-group">
-                    <label class="radio-option">
-                      <input type="radio" name="channel-type" value="text" checked>
-                      <span class="radio-label">Text Channel</span>
-                    </label>
-                    <label class="radio-option">
-                      <input type="radio" name="channel-type" value="voice">
-                      <span class="radio-label">Voice Channel</span>
-                    </label>
-                  </div>
-                </div>
-                <div class="input-group">
-                  <label for="channel-category">Category</label>
-                  <select id="channel-category">
-                    <!-- Categories will be added dynamically -->
-                  </select>
-                </div>
-              </div>
-              <div class="modal-actions">
-                <button class="modal-button secondary" id="cancel-channel">Cancel</button>
-                <button class="modal-button primary" id="create-channel-submit">Create Channel</button>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        modal.innerHTML = modalHTML;
-        document.body.appendChild(modal);
-        
-        // Add event listeners
-        modal.querySelector('.modal-close').addEventListener('click', () => {
-          modal.classList.remove('active');
-        });
-        
-        document.getElementById('cancel-channel').addEventListener('click', () => {
-          modal.classList.remove('active');
-        });
-        
-        document.getElementById('create-channel-submit').addEventListener('click', () => {
-          this._handleCreateChannelSubmit();
-        });
       }
       
-      // Populate category dropdown
-      const categorySelect = document.getElementById('channel-category');
-      categorySelect.innerHTML = '';
+      const modalTitle = isEditing ? 
+        `Edit ${channel.type === 'text' ? 'Text' : 'Voice'} Channel` : 
+        'Create Channel';
       
+      const modalHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>${modalTitle}</h3>
+            <button class="modal-close">✕</button>
+          </div>
+          <div class="modal-content">
+            <div class="modal-section">
+              <div class="input-group">
+                <label for="channel-name">Channel Name</label>
+                <input type="text" id="channel-name" placeholder="Enter a channel name" value="${channel ? channel.name : ''}">
+              </div>
+              ${!isEditing ? `
+              <div class="input-group">
+                <label for="channel-type">Channel Type</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" name="channel-type" value="text" checked>
+                    <span class="radio-label">Text Channel</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="channel-type" value="voice">
+                    <span class="radio-label">Voice Channel</span>
+                  </label>
+                </div>
+              </div>
+              ` : ''}
+              <div class="input-group">
+                <label for="channel-category">Category</label>
+                <select id="channel-category">
+                  <!-- Categories will be added dynamically -->
+                </select>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-button secondary" id="cancel-channel">Cancel</button>
+              <button class="modal-button primary" id="save-channel">${isEditing ? 'Save Changes' : 'Create Channel'}</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      modal.innerHTML = modalHTML;
+      document.body.appendChild(modal);
+      
+      // Add event listeners
+      modal.querySelector('.modal-close').addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+      
+      document.getElementById('cancel-channel').addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+      
+      document.getElementById('save-channel').addEventListener('click', () => {
+        const nameInput = document.getElementById('channel-name');
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+          Utils.showToast('Please enter a channel name', 'error');
+          return;
+        }
+        
+        const categorySelect = document.getElementById('channel-category');
+        let selectedCategory = categorySelect.value;
+        
+        // If "Create New Category" is selected, prompt for new category name
+        if (selectedCategory === '+ Create New Category') {
+          const newCategory = prompt('Enter a name for the new category:');
+          if (!newCategory) {
+            return;
+          }
+          selectedCategory = newCategory;
+        }
+        
+        // Get channel type if creating new channel
+        let channelType = 'text';
+        if (!isEditing) {
+          const typeRadios = document.getElementsByName('channel-type');
+          for (const radio of typeRadios) {
+            if (radio.checked) {
+              channelType = radio.value;
+              break;
+            }
+          }
+        }
+        
+        const channels = this.getChannelsForDen(denId);
+        
+        if (isEditing) {
+          // Update existing channel
+          const updatedChannels = channels.map(ch => {
+            if (ch.id === channel.id) {
+              return {
+                ...ch,
+                name: name.toLowerCase().replace(/\s+/g, '-'),
+                category: selectedCategory
+              };
+            }
+            return ch;
+          });
+          
+          const allChannels = { ...AppState.get('channels') };
+          allChannels[denId] = updatedChannels;
+          AppState.set('channels', allChannels);
+          
+          Utils.showToast(`Channel updated successfully!`, 'success');
+        } else {
+          // Create new channel
+          const newChannel = {
+            id: `channel-${Date.now()}`,
+            denId: denId,
+            name: name.toLowerCase().replace(/\s+/g, '-'),
+            type: channelType,
+            position: channels.filter(ch => ch.category === selectedCategory).length,
+            category: selectedCategory,
+            createdAt: new Date().toISOString()
+          };
+          
+          // Add voice-specific properties if needed
+          if (channelType === 'voice') {
+            newChannel.connectedUsers = 0;
+          }
+          
+          // Add to state
+          const updatedChannels = [...channels, newChannel];
+          const allChannels = { ...AppState.get('channels') };
+          allChannels[denId] = updatedChannels;
+          AppState.set('channels', allChannels);
+          
+          Utils.showToast(`Channel created successfully!`, 'success');
+        }
+        
+        // Close the modal
+        modal.classList.remove('active');
+      });
+      
+      // Populate category dropdown
+      this._populateCategoryDropdown(channel, defaultCategory);
+      
+      // Show the modal
+      modal.classList.add('active');
+    },
+    
+    /**
+     * Populate the category dropdown
+     * @param {Object} [channel] - The channel being edited (if any)
+     * @param {string} [defaultCategory] - Default category for new channels
+     * @private
+     */
+    _populateCategoryDropdown: function(channel, defaultCategory) {
       const denId = AppState.get('activeDen');
       if (!denId) return;
       
-      const channels = AppState.getChannelsForDen(denId);
+      const channels = this.getChannelsForDen(denId);
+      const categorySelect = document.getElementById('channel-category');
+      categorySelect.innerHTML = '';
       
       // Get unique categories
-      const categories = [...new Set(channels.map(channel => channel.category || 'General'))];
+      const categories = [...new Set(channels.map(ch => ch.category || 'General'))];
       
       // Add option to create new category
       categories.push('+ Create New Category');
@@ -355,120 +490,18 @@ const ChannelManager = {
         option.value = cat;
         option.textContent = cat;
         
-        // Set the provided category as selected
-        if (category && cat === category) {
+        // Set the appropriate category as selected
+        if ((channel && cat === channel.category) || 
+            (!channel && defaultCategory && cat === defaultCategory)) {
           option.selected = true;
         }
         
         categorySelect.appendChild(option);
       });
-      
-      // Show the modal
-      modal.classList.add('active');
     },
     
     /**
-     * Handle the submission of the create channel form
-     * @private
-     */
-    _handleCreateChannelSubmit: function() {
-      const nameInput = document.getElementById('channel-name');
-      const channelName = nameInput.value.trim();
-      
-      if (!channelName) {
-        // Show error
-        Utils.showToast('Please enter a channel name', 'error');
-        return;
-      }
-      
-      // Get channel type
-      const typeInputs = document.getElementsByName('channel-type');
-      let channelType = 'text';
-      for (const input of typeInputs) {
-        if (input.checked) {
-          channelType = input.value;
-          break;
-        }
-      }
-      
-      // Get category
-      let categorySelect = document.getElementById('channel-category');
-      let category = categorySelect.value;
-      
-      // If "Create New Category" is selected, prompt for new category name
-      if (category === '+ Create New Category') {
-        const newCategory = prompt('Enter a name for the new category:');
-        if (!newCategory) {
-          return;
-        }
-        category = newCategory;
-      }
-      
-      // Get active den
-      const denId = AppState.get('activeDen');
-      if (!denId) {
-        Utils.showToast('No active den', 'error');
-        return;
-      }
-      
-      // Generate a unique ID for the new channel
-      const channelId = `channel-${Utils.generateId()}`;
-      
-      // Get existing channels for this den
-      const existingChannels = AppState.getChannelsForDen(denId) || [];
-      
-      // Calculate position (last in category)
-      const categoryChannels = existingChannels.filter(ch => ch.category === category && ch.type === channelType);
-      const position = categoryChannels.length > 0 
-        ? Math.max(...categoryChannels.map(ch => ch.position)) + 1 
-        : 0;
-      
-      // Create a new channel object
-      const newChannel = {
-        id: channelId,
-        denId: denId,
-        name: channelName.toLowerCase().replace(/\s+/g, '-'),
-        type: channelType,
-        position: position,
-        category: category,
-        createdAt: new Date().toISOString(),
-        connectedUsers: 0
-      };
-      
-      // Add the channel to the state
-      const channels = { ...AppState.get('channels') };
-      channels[denId] = [...(channels[denId] || []), newChannel];
-      AppState.set('channels', channels);
-      
-      // Create welcome message for text channels
-      if (channelType === 'text') {
-        const welcomeMessage = {
-          id: `msg-${Utils.generateId()}`,
-          channelId: channelId,
-          userId: 'bot-1',
-          username: 'FoxDen Bot',
-          content: `Welcome to #${newChannel.name}! This is the beginning of the channel.`,
-          timestamp: new Date().toISOString(),
-          type: 'system'
-        };
-        
-        // Add message to state
-        AppState.addMessage(channelId, welcomeMessage);
-      }
-      
-      // Set the new channel as active
-      AppState.setActiveChannel(channelId);
-      
-      // Close the modal
-      const modal = document.getElementById('channel-modal');
-      modal.classList.remove('active');
-      
-      // Show success toast
-      Utils.showToast(`Channel "${newChannel.name}" created successfully!`, 'success');
-    },
-    
-    /**
-     * Show the channel context menu
+     * Show channel context menu
      * @param {Event} event - The context menu event
      * @param {string} channelId - The channel ID
      * @private
@@ -477,38 +510,51 @@ const ChannelManager = {
       const denId = AppState.get('activeDen');
       if (!denId) return;
       
-      const channels = AppState.getChannelsForDen(denId);
+      const channels = this.getChannelsForDen(denId);
       const channel = channels.find(ch => ch.id === channelId);
       
       if (!channel) return;
       
+      // Check if user has permission to manage channels
+      const currentUser = AppState.get('currentUser');
+      const members = AppState.getMembersForDen(denId) || [];
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageChannelsPermission = currentMember?.isOwner || // Den owner
+        memberRoles.some(role => role.permissions && role.permissions.includes('manageChannels'));
+      
       const menuItems = [
         {
-          label: `${channel.type === 'text' ? 'Mark as Read' : 'Join Channel'}`,
-          icon: channel.type === 'text' ? '✓' : '🔊',
-          onClick: () => {
-            if (channel.type === 'text') {
-              // Mark as read logic would go here
-              Utils.showToast(`Marked #${channel.name} as read`, 'success');
-            } else {
-              // Join voice channel
-              AppState.setActiveChannel(channelId);
-            }
-          }
-        },
-        { divider: true },
-        {
-          label: 'Edit Channel',
-          icon: '✏️',
-          onClick: () => this._handleEditChannel(channelId)
-        },
-        {
+          label: 'Mark as Read',
+          icon: '✓',
+          onClick: () => this._markChannelAsRead(channelId)
+        }
+      ];
+      
+      if (hasManageChannelsPermission) {
+        menuItems.push({ divider: true });
+        
+        if (channel.type === 'text') {
+          menuItems.push({
+            label: 'Edit Channel',
+            icon: '✏️',
+            onClick: () => this._showEditChannelModal(channelId)
+          });
+        }
+        
+        menuItems.push({
           label: 'Delete Channel',
           icon: '🗑️',
           danger: true,
           onClick: () => this._handleDeleteChannel(channelId)
-        }
-      ];
+        });
+      }
       
       Utils.showContextMenu(menuItems, event.clientX, event.clientY);
     },
@@ -527,130 +573,26 @@ const ChannelManager = {
       
       if (!channel) return;
       
-      // Create or update edit modal
-      let modal = document.getElementById('edit-channel-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'edit-channel-modal';
+      // Check if user has permission to manage channels
+      const currentUser = AppState.get('currentUser');
+      const members = AppState.getMembersForDen(denId) || [];
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageChannelsPermission = currentMember?.isOwner || // Den owner
+        memberRoles.some(role => role.permissions && role.permissions.includes('manageChannels'));
         
-        const modalHTML = `
-          <div class="modal-backdrop"></div>
-          <div class="modal-container">
-            <div class="modal-header">
-              <h3>Edit Channel</h3>
-              <button class="modal-close">✕</button>
-            </div>
-            <div class="modal-content">
-              <div class="modal-section">
-                <div class="input-group">
-                  <label for="edit-channel-name">Channel Name</label>
-                  <input type="text" id="edit-channel-name" placeholder="Enter a channel name">
-                </div>
-                <div class="input-group">
-                  <label for="edit-channel-category">Category</label>
-                  <select id="edit-channel-category">
-                    <!-- Categories will be added dynamically -->
-                  </select>
-                </div>
-              </div>
-              <div class="modal-actions">
-                <button class="modal-button secondary" id="cancel-edit-channel">Cancel</button>
-                <button class="modal-button primary" id="save-channel-edit">Save Changes</button>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        modal.innerHTML = modalHTML;
-        document.body.appendChild(modal);
-        
-        // Add event listeners
-        modal.querySelector('.modal-close').addEventListener('click', () => {
-          modal.classList.remove('active');
-        });
-        
-        document.getElementById('cancel-edit-channel').addEventListener('click', () => {
-          modal.classList.remove('active');
-        });
-        
-        document.getElementById('save-channel-edit').addEventListener('click', () => {
-          const editNameInput = document.getElementById('edit-channel-name');
-          const editName = editNameInput.value.trim();
-          
-          if (!editName) {
-            Utils.showToast('Please enter a channel name', 'error');
-            return;
-          }
-          
-          const editCategorySelect = document.getElementById('edit-channel-category');
-          let editCategory = editCategorySelect.value;
-          
-          // If "Create New Category" is selected, prompt for new category name
-          if (editCategory === '+ Create New Category') {
-            const newCategory = prompt('Enter a name for the new category:');
-            if (!newCategory) {
-              return;
-            }
-            editCategory = newCategory;
-          }
-          
-          // Update channel in state
-          const updatedChannels = channels.map(ch => {
-            if (ch.id === channelId) {
-              return {
-                ...ch,
-                name: editName.toLowerCase().replace(/\s+/g, '-'),
-                category: editCategory
-              };
-            }
-            return ch;
-          });
-          
-          const allChannels = { ...AppState.get('channels') };
-          allChannels[denId] = updatedChannels;
-          AppState.set('channels', allChannels);
-          
-          // Close the modal
-          modal.classList.remove('active');
-          
-          // Show success toast
-          Utils.showToast(`Channel updated successfully!`, 'success');
-        });
+      if (!hasManageChannelsPermission) {
+        Utils.showToast("You don't have permission to edit channels", "error");
+        return;
       }
       
-      // Fill form with current channel data
-      document.getElementById('edit-channel-name').value = channel.name;
-      
-      // Populate category dropdown
-      const categorySelect = document.getElementById('edit-channel-category');
-      categorySelect.innerHTML = '';
-      
-      // Get unique categories
-      const categories = [...new Set(channels.map(ch => ch.category || 'General'))];
-      
-      // Add option to create new category
-      categories.push('+ Create New Category');
-      
-      // Populate dropdown
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        
-        // Set the current category as selected
-        if (cat === channel.category) {
-          option.selected = true;
-        }
-        
-        categorySelect.appendChild(option);
-      });
-      
-      // Update modal title
-      modal.querySelector('.modal-header h3').textContent = `Edit ${channel.type === 'text' ? 'Text' : 'Voice'} Channel`;
-      
-      // Show the modal
-      modal.classList.add('active');
+      this._showChannelModal(channel);
     },
     
     /**
@@ -761,6 +703,42 @@ const ChannelManager = {
       `;
       
       return userElement;
+    },
+    
+    /**
+     * Show the edit channel modal
+     * @param {string} channelId - The channel ID to edit
+     * @private
+     */
+    _showEditChannelModal: function(channelId) {
+      const denId = AppState.get('activeDen');
+      if (!denId) return;
+      
+      const channels = this.getChannelsForDen(denId);
+      const channel = channels.find(ch => ch.id === channelId);
+      
+      if (!channel) return;
+      
+      // Check if user has permission to manage channels
+      const currentUser = AppState.get('currentUser');
+      const members = AppState.getMembersForDen(denId) || [];
+      const currentMember = members.find(m => m.id === currentUser.id);
+      
+      // Get roles and permissions for this member
+      const memberRolesIds = currentMember?.roles || [];
+      const roles = AppState.getRolesForDen(denId) || [];
+      const memberRoles = roles.filter(role => memberRolesIds.includes(role.id));
+      
+      // Check for specific permissions
+      const hasManageChannelsPermission = currentMember?.isOwner || // Den owner
+        memberRoles.some(role => role.permissions && role.permissions.includes('manageChannels'));
+        
+      if (!hasManageChannelsPermission) {
+        Utils.showToast("You don't have permission to edit channels", "error");
+        return;
+      }
+      
+      this._showChannelModal(channel);
     },
     
   };
